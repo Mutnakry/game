@@ -2,44 +2,34 @@
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa6";
 import { auth, db } from "../firebase";
-
+import { useRouter } from "next/navigation";
 function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
-    async function handleLogout() {
-        try {
-            await auth.signOut();
-            window.location.href = "/login";
-            console.log("User logged out successfully!");
-        } catch (error) {
-            console.error("Error logging out:");
-        }
-    }
+    
+    const router = useRouter();
+    const handleLogout = () => {
+        localStorage.removeItem("token");  // Remove token from localStorage
+        router.replace("/login"); // Redirect to login page after logout
+      };
 
     return (
         <nav className="fixed top-0 left-0 w-full z-50 bg-gray-900 bg-opacity-85">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 py-2">
                 <div>
                     <span className="bg-gradient-to-r from-white via-green-500 to-blue-500 text-transparent bg-clip-text font-bold text-3xl">
-                        Game
+                        Game Crash
                     </span>
                 </div>
 
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="md:hidden text-gray-200 dark:text-white"
-                    aria-expanded={isOpen}
-                    aria-label="Toggle navigation"
-                >
-                    <FaBars size={24} />
-                </button>
                 {isOpen && (
                     <div
                         className="fixed inset-0 opacity-50 z-20 md:hidden"
                         onClick={() => setIsOpen(false)}
                     ></div>
                 )}
+                
                 <div
-                    className={`fixed top-0 left-0 z-20 w-64 h-screen overflow-y-auto transform transition-transform ${isOpen ? "translate-x-0 bg-gray-800 bg-opacity-85" : "-translate-x-full"
+                    className={`fixed top-0 right-0 z-20 w-64 h-screen bg-opacity-85 overflow-y-auto transform transition-transform duration-300 ${isOpen ? "translate-x-0 bg-gray-800 bg-opacity-50 mt-13" : "translate-x-full"
                         } md:relative md:translate-x-0 md:w-auto md:h-auto md:flex md:items-center`}
                 >
                     <ul className="space-y-4 md:mt-0 mt-10 xl:text-2xl text-center md:xl text-md text-white font-semibold md:flex md:space-y-0 md:space-x-6">
@@ -63,6 +53,14 @@ function Navbar() {
                 </div>
                 <button className="text-white" onClick={handleLogout}>
                     Logout
+                </button>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="md:hidden text-gray-200 dark:text-white"
+                    aria-expanded={isOpen}
+                    aria-label="Toggle navigation"
+                >
+                    <FaBars size={24} />
                 </button>
             </div>
         </nav>
