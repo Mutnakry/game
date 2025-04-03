@@ -1,15 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa6";
-import { auth, db } from "../firebase";
 import { useRouter } from "next/navigation";
+
 function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     
     const router = useRouter();
     const handleLogout = () => {
         localStorage.removeItem("token");  // Remove token from localStorage
-        router.replace("/login"); // Redirect to login page after logout
+        router.replace("/login"); 
       };
 
     return (

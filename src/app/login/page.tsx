@@ -1,12 +1,29 @@
 'use client';
 import { useState } from "react";
 import { FaUser, FaPhoneAlt, FaRegEyeSlash, FaRegEye } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
 import { PiLockKey } from "react-icons/pi";
-import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+
+
+import { initializeApp } from "firebase/app";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 export default function page() {
     const [email, setEmail] = useState<string>('');
@@ -15,7 +32,7 @@ export default function page() {
     const [phone, setPhone] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
-    const [isLogin, setIsLogin] = useState<boolean>(true);
+    const [isLogin, setIsLogin] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
 
     const router = useRouter();
@@ -25,7 +42,7 @@ export default function page() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             alert("Login Successful!");
-            router.push("/view/dashboard");
+            router.push("/backend");
         } catch (error: any) {
             setError(error.message);
         } finally {
@@ -63,8 +80,7 @@ export default function page() {
 
     return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-4">
-
-            <Image className="mb-14" src="/LOGO CRASH-02.png" alt="Logo" width={280} height={160} />
+            <img className="mb-14" src="/LOGO CRASH-02.png" alt="Logo" />
 
             <div className="space-y-8">
                 <div className="bg-gradient-to-tr from-gray-900 via-gray-950 to-gray-900 p-6 shadow-lg w-80 text-center">
@@ -88,7 +104,7 @@ export default function page() {
                         )}
                         <div className="relative w-full">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                <FaUser />
+                                <MdEmail />
                             </div>
                             <input
                                 type="email"
@@ -173,7 +189,6 @@ export default function page() {
                     <div className="text-white text-lg animate-pulse">Processing...</div>
                 </div>
             )}
-
             <div className="mt-14 flex space-x-4">
                 <img
                     src="https://t4.ftcdn.net/jpg/04/42/21/53/360_F_442215355_AjiR6ogucq3vPzjFAAEfwbPXYGqYVAap.jpg"

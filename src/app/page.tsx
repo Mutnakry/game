@@ -14,7 +14,7 @@ export default function Home() {
       if (!storedToken) {
         router.push("/login"); // Redirect to login
       } else {
-        router.push("/view/dashboard"); // Redirect to dashboard
+        router.push("/backend"); // Redirect to dashboard
       }
       setLoading(false);
     }, 1000); 
