@@ -5,7 +5,7 @@ import { MdEmail } from "react-icons/md";
 import { PiLockKey } from "react-icons/pi";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { motion } from 'framer-motion';
 import { AnimatePresence } from "framer-motion"
 import UopupRegisterSuccess from '@/components/UopupRegisterSuccess'
 
@@ -13,7 +13,6 @@ import UopupRegisterSuccess from '@/components/UopupRegisterSuccess'
 import { initializeApp } from "firebase/app";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { div } from "framer-motion/client";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -63,9 +62,7 @@ export default function page() {
                 username,
                 phone,
             });
-            alert("Registration Successful!");
-            router.push("/login");
-            // window.location.href = "/profile";
+            setShowPopup(true);
         } catch (error: any) {
             console.error(error);
             setError(error.message);
@@ -74,14 +71,6 @@ export default function page() {
             setLoading(false);
         }
     };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-black text-white">
-                <p className="text-xl animate-pulse">Loading...</p>
-            </div>
-        );
-    }
 
     const onclick1 = () => {
         setShowPopup(true);
@@ -163,12 +152,15 @@ export default function page() {
                         </div>
 
                         {error && <p className="text-red-500 text-sm">{error}</p>}
-                        <button
+                        <motion.button
+                         whileHover={{ scale: 1.1 }}
+                         whileTap={{ scale: 0.8 }}
+                         
                             onClick={isLogin ? handleLogin : handleRegister}
                             className="mt-4 w-full cursor-pointer bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400"
                         >
                             {isLogin ? 'Login' : 'Register'}
-                        </button>
+                        </motion.button>
                         <div className="mt-4 text-sm">
                             {isLogin ? (
                                 <p>
@@ -214,7 +206,7 @@ export default function page() {
                     />
                 </div>
             </div>
-         
+
             <AnimatePresence>
                 {showPopup && <UopupRegisterSuccess setShowPopup={setShowPopup} />}
             </AnimatePresence>
