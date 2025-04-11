@@ -18,7 +18,7 @@
 
 
 
-import MiniCrash from "@/components/mini-crash"
+import MiniCrash from "@/components/crash-predictor-with-firebase"
 
 import MiniCrashFirebase from "@/components/crash-predictor-with-firebase"
 export default function Home() {
