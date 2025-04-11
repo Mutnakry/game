@@ -74,7 +74,11 @@ export default function MultiplierRangesAdmin() {
           min: data.min,
           max: data.max,
           probability: data.probability,
-          createdAt: data.createdAt ? new Date(data.createdAt.toDate()) : undefined,
+          // createdAt: data.createdAt ? new Date(data.createdAt.toDate()) : undefined,
+          createdAt: data.createdAt
+            ? new Date((data.createdAt as any).toDate ? (data.createdAt as any).toDate() : data.createdAt)
+            : undefined
+
         })
         probabilitySum += data.probability
       })
@@ -336,9 +340,8 @@ export default function MultiplierRangesAdmin() {
             ) : (
               <>
                 <div
-                  className={`mb-4 p-2 rounded ${
-                    totalProbability === 100 ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                  }`}
+                  className={`mb-4 p-2 rounded ${totalProbability === 100 ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                    }`}
                 >
                   Total Probability: {totalProbability}% {totalProbability !== 100 && "(Should equal 100%)"}
                 </div>
