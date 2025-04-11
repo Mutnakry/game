@@ -14,7 +14,7 @@ export default function Home() {
       if (!storedToken) {
         router.push("/login"); // Redirect to login
       } else {
-        router.push("/backend"); // Redirect to dashboard
+        router.push("/crash-game"); // Redirect to dashboard
       }
       setLoading(false);
     }, 1000); 
@@ -30,3 +30,17 @@ export default function Home() {
 
   return null;
 }
+
+
+
+
+
+// import MiniCrash from "@/components/mini-crash"
+
+// export default function Home() {
+//   return (
+//     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-black">
+//       <MiniCrash />
+//     </main>
+//   )
+// }
