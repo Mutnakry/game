@@ -3,14 +3,18 @@ import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion"
 
 interface UopupRegisterSuccessProps {
-    setShowPopup: React.Dispatch<React.SetStateAction<boolean>>;
+    setAccAtive: React.Dispatch<React.SetStateAction<boolean>>;
+    userData: {
+        email: string;
+        username: string;
+    } | null;
 }
-const UopupRegisterSuccess: React.FC<UopupRegisterSuccessProps> = ({ setShowPopup }) => {
+const AccountInactiveLogin: React.FC<UopupRegisterSuccessProps> = ({ setAccAtive, userData }) => {
     const router = useRouter();
     const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
         if (target.id === 'popup-overlay') {
-            setShowPopup(false);
+            setAccAtive(false);
         }
     };
     useEffect(() => {
@@ -20,6 +24,15 @@ const UopupRegisterSuccess: React.FC<UopupRegisterSuccessProps> = ({ setShowPopu
         };
     }, []);
 
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                alert("Copied to clipboard!");
+            })
+            .catch((err) => {
+                console.error("Failed to copy: ", err);
+            });
+    };
     return (
         <motion.div
             id="popup-overlay"
@@ -34,22 +47,27 @@ const UopupRegisterSuccess: React.FC<UopupRegisterSuccessProps> = ({ setShowPopu
                 onClick={(e) => e.stopPropagation()}
             >
                 <h3 className="text-lg font-semibold mb-2 font-KhmerMoul">Registration Completed!</h3>
-                <p className="mb-4">Hi Dear! Your registration is successful.</p>
                 <p >Please contact our customer service to activate your account!</p>
+                <div className="mt-4 text-left">
+                    <p><strong>Email:</strong> {userData?.email}</p>
+                    <p><strong>User Name:</strong> {userData?.username}</p>
+                    <button onClick={() => copyToClipboard(userData?.email || "")}>Copy</button>
+                </div>
                 <p className="mt-2 font-KhmerMoul font-semibold text-blue-500">Contact: +123 456 7890</p>
-                <button
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.8 }}
                     className="mt-4 bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400 w-full"
                     onClick={() => {
-                        setShowPopup(false);
+                        setAccAtive(false);
                     }}
                 >
                     OK
-                </button>
+                </motion.button>
             </div>
         </motion.div>
 
     );
 };
 
-export default UopupRegisterSuccess;
-
+export default AccountInactiveLogin

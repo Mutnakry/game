@@ -3,11 +3,12 @@ import { useState } from "react";
 import { FaUser, FaPhoneAlt, FaRegEyeSlash, FaRegEye } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import { PiLockKey } from "react-icons/pi";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { motion } from 'framer-motion';
 import { AnimatePresence } from "framer-motion"
 import UopupRegisterSuccess from '@/components/UopupRegisterSuccess'
+import AccountInactiveLogin from '@/components/AccountInactiveLogin'
 
 
 import { initializeApp } from "firebase/app";
@@ -26,6 +27,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+type User = {
+    id: string;
+    username: string;
+    phone: string;
+    status: string;
+};
 
 export default function page() {
     const [email, setEmail] = useState<string>('');
@@ -36,23 +43,44 @@ export default function page() {
     const [error, setError] = useState<string>('');
     const [isLogin, setIsLogin] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
-    const [showPopup, setShowPopup] = useState(false); // Pop-up state
+    const [showPopup, setShowPopup] = useState<boolean>(false);
+    const [accAtive, setAccAtive] = useState<boolean>(false);
+    const [inactiveUserData, setInactiveUserData] = useState<{ email: string; username: string } | null>(null);
 
 
     const router = useRouter();
-    const handleLogin = async () => {
 
+
+    const handleLogin = async () => {
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            alert("Login Successful!");
-            router.push("/backend");
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.status === "active") {
+                    alert("Login Successful!");
+                    router.push("/crash-game");
+                } else {
+                    await auth.signOut();
+                    setAccAtive(true);
+                    setInactiveUserData({
+                        email: user.email || "",
+                        username: userData.username || "",
+                    });
+                }
+            } else {
+                await auth.signOut();
+                setError("User data not found in database.");
+            }
         } catch (error: any) {
             setError(error.message);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleRegister = async () => {
         setLoading(true);
@@ -61,6 +89,7 @@ export default function page() {
             await setDoc(doc(db, "users", userCredential.user.uid), {
                 username,
                 phone,
+                status: "inactive"
             });
             setShowPopup(true);
         } catch (error: any) {
@@ -72,18 +101,14 @@ export default function page() {
         }
     };
 
-    const onclick1 = () => {
-        setShowPopup(true);
-    }
-
     return (
         <div>
             <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-4">
-                <img className="mb-14" src="/LOGO CRASH-02.png" alt="Logo" />
+                <img className="mb-8" src="/LOGO CRASH-02.png" alt="Logo" />
 
                 <div className="space-y-8">
                     <div className="bg-gradient-to-tr from-gray-900 via-gray-950 to-gray-900 p-6 shadow-lg w-80 text-center">
-                        <h2 onClick={onclick1} className="text-lg font-semibold mb-4">{isLogin ? 'Login' : 'Register Now'}</h2>
+                        <h2 className="text-lg font-semibold mb-4">{isLogin ? 'Login' : 'Register Now'}</h2>
 
                         <div className="space-y-4">
                             {!isLogin && (
@@ -153,9 +178,9 @@ export default function page() {
 
                         {error && <p className="text-red-500 text-sm">{error}</p>}
                         <motion.button
-                         whileHover={{ scale: 1.1 }}
-                         whileTap={{ scale: 0.8 }}
-                         
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.8 }}
+
                             onClick={isLogin ? handleLogin : handleRegister}
                             className="mt-4 w-full cursor-pointer bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400"
                         >
@@ -209,6 +234,9 @@ export default function page() {
 
             <AnimatePresence>
                 {showPopup && <UopupRegisterSuccess setShowPopup={setShowPopup} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {accAtive && <AccountInactiveLogin setAccAtive={setAccAtive} userData={inactiveUserData} />}
             </AnimatePresence>
         </div>
     );

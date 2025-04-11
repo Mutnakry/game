@@ -8,8 +8,8 @@ function Navbar() {
     
     const router = useRouter();
     const handleLogout = () => {
-        localStorage.removeItem("token");  // Remove token from localStorage
-        router.replace("/login"); 
+        localStorage.removeItem("token"); // Remove token from localStorage
+        router.replace("/login");
       };
 
     return (
