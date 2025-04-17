@@ -1,0 +1,11 @@
+captainVersion: 4
+
+services:
+  nextjs-app:
+    image: ""
+    dockerfilePath: ./Dockerfile
+    containerHttpPort: "3000"
+    notExposeAsWebApp: false
+    envVars:
+      - key: NODE_ENV
+        value: production
