@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Tab } from "@headlessui/react"
 import ShowUserLogin from "@/components/ShowUserLogin"
 import RandDomMultiplire from "@/components/rand-dom-multiplire"
@@ -25,12 +25,22 @@ const Page: React.FC = () => {
     { name: "Rang Multiplier", icon: FaUserCog },
     { name: "Presets", icon: FaUserCog },
   ]
-
   const router = useRouter()
+
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token")
+  //   const locked = localStorage.getItem("adminLocked")
+
+  //   if (locked === "true") {
+  //     router.replace("/admin")
+  //   }
+  // }, [])
+
+
 
   const handleLogout = () => {
     localStorage.removeItem("token") // Remove token from localStorage
-    router.replace("/login")
+    router.replace("/admin")
   }
 
   return (
@@ -59,7 +69,7 @@ const Page: React.FC = () => {
 
       <div className="w-full px-6 py-2">
         <Tab.Group selectedIndex={activeTabIndex} onChange={setActiveTabIndex}>
-          <Tab.List className="flex gap-1 relative">
+          <Tab.List className="md:flex gap-1 relative">
             {menu.map(({ name, icon: Icon }, index) => (
               <Tab key={name} className={`py-3 px-4 text-sm font-bold relative z-10 focus:outline-none text-gray-700`}>
                 {({ selected }) => (
@@ -101,7 +111,7 @@ const Page: React.FC = () => {
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
                   <AdminDashBoard />
-                  <GameHistory/>
+                  <GameHistory />
                 </motion.div>
               </Tab.Panel>
               <Tab.Panel className="p-4 border border-dashed">

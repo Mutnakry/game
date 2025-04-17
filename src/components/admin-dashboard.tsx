@@ -201,7 +201,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Available Codes */}
-          <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center">
+          {/* <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center">
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Available Codes</h3>
               <p className="text-3xl font-bold mt-1">23</p>
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                 />
               </svg>
             </div>
-          </div>
+          </div> */}
         </div>
 
       </main>
