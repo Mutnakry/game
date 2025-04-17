@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 // // Add Firebase imports at the top of the file
 import { db } from "./firebase-config"
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"
-
+import { useRouter } from "next/navigation"
 
 type MultiplierRange = {
   id: string
@@ -380,7 +380,6 @@ export default function CrashPredictor() {
     if (isBetting && isRunning && !hasSavedDataRef.current) {
       hasSavedDataRef.current = true  // prevent further execution
       setIsBetting(false)
-
       const winAmount = betAmount * multiplier
       const profitValue = winAmount - betAmount
 
@@ -427,51 +426,7 @@ export default function CrashPredictor() {
   }
 
 
-  function cashOut2() {
-    if (isBetting && isRunning) {
-      setIsBetting(false)
-
-      const winAmount = betAmount * multiplier
-      const profitValue = winAmount - betAmount
-
-      const numSimulations = 10000
-      let wins = 0
-      let totalProfit = 0
-
-      for (let i = 0; i < numSimulations; i++) {
-        const simCrashPoint = generateCrashPoint()
-        const win = simCrashPoint >= crashPointRef.current
-        const simProfit = win ? betAmount * (crashPointRef.current - 1) : -betAmount
-        if (win) wins++
-        totalProfit += simProfit
-      }
-
-      const winRateValue = (wins / numSimulations) * 100
-      const expectedValueResult = totalProfit / numSimulations
-
-      // Update UI state separately
-      setProfit(profitValue)
-      setWinRate(winRateValue)
-      setExpectedValue(expectedValueResult)
-      setShowResults(true)
-
-      // ✅ Use locally computed values instead of state!
-      const crashData = {
-        timestamp: serverTimestamp(),
-        crashPoint: crashPointRef.current,
-        betAmount: betAmount,
-        cashoutMultiplier: crashPointRef.current,
-        userCashedOut: false,
-        winRate: winRateValue,
-        expectedValue: expectedValueResult,
-        profit: profitValue,
-      }
-
-      console.log(crashData)
-      // await addDoc(collection(db, "crashHistory"), crashData)
-    }
-  }
-
+  
   function calculateStatistics() {
     // Run simulations to calculate win rate and expected value
     const numSimulations = 10000
@@ -849,7 +804,7 @@ export default function CrashPredictor() {
   }
 
   function increaseBet() {
-    setBetAmount((prev) => prev + 10)
+    setBetAmount((prev) => prev + 1)
     setSelectedPreset(null)
   }
 
@@ -913,6 +868,15 @@ export default function CrashPredictor() {
     }
   }
 
+  console.log('demoMode',demoMode)
+
+ const router = useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem("token") // Remove token from localStorage
+    router.replace("/admin")
+  }
+
   return (
     <div className="w-full max-w-4xl">
       {/* Header */}
@@ -927,32 +891,15 @@ export default function CrashPredictor() {
           className="w-full h-full cursor-pointer"
           onClick={handleCanvasClick}
         />
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <button
-            onClick={toggleDemoMode}
-            className="px-6 py-3 text-lg font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-transform pointer-events-auto"
-          >
-            {demoMode ? "STOP DEMO" : "START DEMO"}
-          </button>
-        </div>
+
+        
+
 
         {/* Starting delay overlay */}
         {isStarting && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
             <div className="text-white text-2xl font-bold animate-pulse">Starting in 1 second...</div>
           </div>
-        )}
-
-        {/* Overlay buttons */}
-        {isRunning && isBetting && (
-          <button
-            onClick={cashOut}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-20
-                      bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-md
-                      text-xl animate-pulse"
-          >
-            CASH OUT
-          </button>
         )}
 
         {/* Play Again button when crashed */}
@@ -1038,8 +985,18 @@ export default function CrashPredictor() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Bet</div>
-              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Manual</div>
+              {/* <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Bet</div>
+              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Manual</div> */}
+              {isRunning ? (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <button
+              onClick={toggleDemoMode}
+              className="px-8 py-4 text-xl font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-transform pointer-events-auto uppercase"
+            >
+              {demoMode ? "Start Demo" : "Start"}
+            </button>
+          </div>
+        ):null}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -1110,8 +1067,8 @@ export default function CrashPredictor() {
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Auto</div>
-              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Cashout</div>
+              {/* <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Auto</div>
+              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Cashout</div> */}
             </div>
 
             <div className="flex items-center space-x-2">

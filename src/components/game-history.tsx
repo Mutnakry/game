@@ -249,10 +249,10 @@ export function GameHistory() {
   return (
     <div className="w-full rounded-lg p-2">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-700">Recent Crash History</h2>
+        <h2 className="md:text-2xl text-sm font-bold text-gray-700">Recent Crash History</h2>
         <button
           onClick={handleManualRefresh}
-          className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-md text-sm flex items-center"
+          className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-md md:text-sm text-xs flex items-center"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -286,7 +286,7 @@ export function GameHistory() {
 
         <button
           onClick={() => setDeleteAllDialogOpen(true)}
-          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm flex items-center"
+          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md md:text-sm text-xs flex items-center"
           disabled={crashes.length === 0}
         >
           <svg
@@ -342,7 +342,7 @@ export function GameHistory() {
                 ) : (
                   crashes.map((crash) => (
                     <tr key={crash.id} className="border-b text-sm text-gray-700 border-gray-800 hover:bg-gray-100">
-                      <td className="px-4 py-3 text-gray-600">{formatDate(crash.timestamp)}</td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{formatDate(crash.timestamp)}</td>
                       <td className="px-4 py-3 font-medium text-red-500">{crash.crashPoint?.toFixed(2)}x</td>
                       <td className="px-4 py-3">{crash.betAmount?.toFixed(2)}</td>
                       <td className="px-4 py-3">{crash.cashoutMultiplier?.toFixed(2)}x</td>
