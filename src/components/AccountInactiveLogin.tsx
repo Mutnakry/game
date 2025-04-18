@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast"
 interface UopupRegisterSuccessProps {
     setAccAtive: React.Dispatch<React.SetStateAction<boolean>>
     userData: {
-        email: string
         username: string
         phone: string
         message?: string
@@ -58,7 +57,7 @@ const AccountInactiveLogin: React.FC<UopupRegisterSuccessProps> = ({ setAccAtive
     const handleWhatsAppContact = () => {
         // Replace with your actual customer service WhatsApp number
         const phoneNumber = "+123456789"
-        const message = `Hello, I'm ${userData?.username} (${userData?.email})  (${userData?.phone}). My account is inactive and I need assistance to activate it.`
+        const message = `Hello, I'm ${userData?.username} (${userData?.phone}). My account is inactive and I need assistance to activate it.`
 
         // Create WhatsApp URL with pre-filled message
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
@@ -83,9 +82,6 @@ const AccountInactiveLogin: React.FC<UopupRegisterSuccessProps> = ({ setAccAtive
                     <div className="flex text-sm justify-between items-center">
                         <div>
                             <p>
-                                <strong>Email:</strong> {userData?.email}
-                            </p>
-                            <p>
                                 <strong>Username:</strong> {userData?.username}
                             </p>
                             <p>
@@ -94,7 +90,7 @@ const AccountInactiveLogin: React.FC<UopupRegisterSuccessProps> = ({ setAccAtive
                         </div>
                         <button
                             className="text-xl text-gray-500 hover:text-slate-700 pl-4"
-                            onClick={() => copyToClipboard(`Email: ${userData?.email || ""}\nUsername: ${userData?.username || ""}`)}
+                            onClick={() => copyToClipboard(`\nUsername: ${userData?.username || ""}`)}
                             aria-label="Copy account information"
                         >
                             <FaCopy />
