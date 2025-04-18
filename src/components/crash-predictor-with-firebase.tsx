@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { db } from "./firebase-config"
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"
 import { useRouter } from "next/navigation"
+
 
 type MultiplierRange = {
   id: string
@@ -22,7 +22,7 @@ type Preset = {
   label: string
 }
 
-export default function CrashPredictor() {
+export default function CrashGame() {
   // Game state
   const [betAmount, setBetAmount] = useState(1.0)
   const [cashoutMultiplier, setCashoutMultiplier] = useState(2.0)
@@ -32,14 +32,18 @@ export default function CrashPredictor() {
   const [isBetting, setIsBetting] = useState(false)
   const [multiplier, setMultiplier] = useState(1.0)
   const [profit, setProfit] = useState<number | null>(null)
-  const [autoStart, setAutoStart] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [winRate, setWinRate] = useState<number | null>(null)
   const [expectedValue, setExpectedValue] = useState<number | null>(null)
   const [isPointRevealed, setIsPointRevealed] = useState(false)
   const [showGridAnimation, setShowGridAnimation] = useState(false)
-  const [demoMode, setDemoMode] = useState(true)
+  const [demoMode, setDemoMode] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
+  const [activeTab, setActiveTab] = useState<"bet" | "auto">("bet")
+  const [betPlaced, setBetPlaced] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>("")
 
   // Initialize with default presets that will be replaced when data loads
   const [presets, setPresets] = useState<Preset[]>([
@@ -47,6 +51,7 @@ export default function CrashPredictor() {
     { value: 20.0, label: "20.00" },
     { value: 50.0, label: "50.00" },
     { value: 100.0, label: "100.00" },
+    { value: 200.0, label: "200.00" },
   ])
 
   const [multiplierRanges, setMultiplierRanges] = useState<MultiplierRange[]>([])
@@ -72,16 +77,17 @@ export default function CrashPredictor() {
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null)
   const gridAnimationProgressRef = useRef(0)
   const gridCellsRef = useRef<Array<{ x: number; y: number; delay: number; color: string }>>([])
+  const gridAnimationRef = useRef<number>(0)
 
   // Aircraft dimensions
-  const aircraftWidth = 110
-  const aircraftHeight = 80
+  const aircraftWidth = 60
+  const aircraftHeight = 30
 
   // Border padding to prevent overflow
   const borderPadding = Math.max(aircraftWidth, aircraftHeight) / 2 + 10
   const rightPadding = 20
 
-  // Fetch game data from Firebase
+  // Fetch game data from API
   useEffect(() => {
     const fetchGameData = async () => {
       setIsLoadingData(true)
@@ -91,46 +97,60 @@ export default function CrashPredictor() {
         console.log("Fetching game data...")
 
         // Fetch presets
-        const presetsResponse = await fetch("/api/game-presets")
-        if (!presetsResponse.ok) {
-          throw new Error(`Failed to fetch presets: ${presetsResponse.status} ${presetsResponse.statusText}`)
-        }
+        try {
+          const presetsResponse = await fetch("/api/game-presets")
+          if (!presetsResponse.ok) {
+            throw new Error(`Failed to fetch presets: ${presetsResponse.status} ${presetsResponse.statusText}`)
+          }
 
-        const presetsData = await presetsResponse.json()
-        console.log("Presets data:", presetsData)
+          const presetsData = await presetsResponse.json()
+          console.log("Presets data:", presetsData)
 
-        if (Array.isArray(presetsData) && presetsData.length > 0) {
-          setPresets(presetsData)
-        } else {
-          console.warn("Received empty or invalid presets data, using defaults")
+          if (Array.isArray(presetsData) && presetsData.length > 0) {
+            setPresets(presetsData)
+          } else {
+            console.warn("Received empty or invalid presets data, using defaults")
+          }
+        } catch (error) {
+          console.error("Error fetching presets:", error)
+          setDataError(error instanceof Error ? error.message : "Failed to load presets")
         }
 
         // Fetch multiplier ranges
-        const multipliersResponse = await fetch("/api/crash-multipliers")
-        if (!multipliersResponse.ok) {
-          throw new Error(
-            `Failed to fetch multipliers: ${multipliersResponse.status} ${multipliersResponse.statusText}`,
-          )
-        }
-
-        const multipliersData = await multipliersResponse.json()
-        console.log("Multipliers data:", multipliersData)
-
-        setUseDefaultAlgorithm(multipliersData.useDefault)
-
-        if (!multipliersData.useDefault && multipliersData.multipliers && Array.isArray(multipliersData.multipliers)) {
-          setMultiplierRanges(multipliersData.multipliers)
-
-          // Validate total probability
-          const totalProb = multipliersData.multipliers.reduce(
-            (sum: number, m: MultiplierRange) => sum + m.probability,
-            0,
-          )
-          if (Math.abs(totalProb - 100) > 1) {
-            console.warn(`Total probability (${totalProb}%) does not add up to 100%. This may affect game balance.`)
+        try {
+          const multipliersResponse = await fetch("/api/crash-multipliers")
+          if (!multipliersResponse.ok) {
+            throw new Error(
+              `Failed to fetch multipliers: ${multipliersResponse.status} ${multipliersResponse.statusText}`,
+            )
           }
-        } else {
-          console.log("Using default crash algorithm")
+
+          const multipliersData = await multipliersResponse.json()
+          console.log("Multipliers data:", multipliersData)
+
+          setUseDefaultAlgorithm(multipliersData.useDefault)
+
+          if (
+            !multipliersData.useDefault &&
+            multipliersData.multipliers &&
+            Array.isArray(multipliersData.multipliers)
+          ) {
+            setMultiplierRanges(multipliersData.multipliers)
+
+            // Validate total probability
+            const totalProb = multipliersData.multipliers.reduce(
+              (sum: number, m: MultiplierRange) => sum + m.probability,
+              0,
+            )
+            if (Math.abs(totalProb - 100) > 1) {
+              console.warn(`Total probability (${totalProb}%) does not add up to 100%. This may affect game balance.`)
+            }
+          } else {
+            console.log("Using default crash algorithm")
+          }
+        } catch (error) {
+          console.error("Error fetching multipliers:", error)
+          setDataError(error instanceof Error ? error.message : "Failed to load multipliers")
         }
       } catch (error) {
         console.error("Error fetching game data:", error)
@@ -145,42 +165,22 @@ export default function CrashPredictor() {
   }, [])
 
   useEffect(() => {
-    // Load the plane image
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.src = "https://res.cloudinary.com/dy6z3h1dr/image/upload/v1743943068/Aviator_GiF_vpajka.gif"
-    img.onload = () => {
-      planeRef.current = img
-      // Start the demo mode once the plane image is loaded
-      if (demoMode && !hasCrashed) {
-        startGameWithDelay()
-      }
-    }
-    img.onerror = (e) => {
-      console.error("Error loading plane image:", e)
-      // Start demo mode even if image fails to load
-      if (demoMode && !hasCrashed) {
-        startGameWithDelay()
-      }
-    }
-
-    // Initialize grid cells for animation
-    initializeGridCells()
-
     // Initialize canvas with background
     const canvas = canvasRef.current
     if (canvas) {
       const ctx = canvas.getContext("2d")
       if (ctx) {
         // Draw initial background
-        ctx.fillStyle = "#0a1735"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        drawRadialBackground(ctx, canvas.width, canvas.height, { x: 0, y: 0 }, 1.0)
       }
     }
 
     return () => {
+      // Ensure all animations are properly canceled
+      isRunningRef.current = false
       cancelAnimationFrame(animationRef.current)
       cancelAnimationFrame(crashAnimationRef.current)
+      cancelAnimationFrame(gridAnimationRef.current)
       if (restartTimerRef.current) {
         clearTimeout(restartTimerRef.current)
       }
@@ -188,7 +188,7 @@ export default function CrashPredictor() {
         clearTimeout(revealTimerRef.current)
       }
     }
-  }, [demoMode, hasCrashed])
+  }, [])
 
   // Initialize grid cells for animation
   function initializeGridCells() {
@@ -221,7 +221,10 @@ export default function CrashPredictor() {
 
   // Function to animate the grid
   function animateGrid(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    if (!showGridAnimation) return
+    if (!showGridAnimation) {
+      cancelAnimationFrame(gridAnimationRef.current)
+      return
+    }
 
     // Increase animation progress
     gridAnimationProgressRef.current += 0.02
@@ -266,7 +269,7 @@ export default function CrashPredictor() {
     })
 
     // Continue animation
-    requestAnimationFrame(() => {
+    gridAnimationRef.current = requestAnimationFrame(() => {
       if (ctx && showGridAnimation) {
         animateGrid(ctx, width, height)
       }
@@ -274,7 +277,7 @@ export default function CrashPredictor() {
   }
 
   function generateCrashPoint() {
-    // If we're using custom multiplier ranges from Firebase
+    // If we're using custom multiplier ranges from API
     if (!useDefaultAlgorithm && multiplierRanges.length > 0) {
       const rand = Math.random() * 100
       let cumulativeProbability = 0
@@ -297,7 +300,6 @@ export default function CrashPredictor() {
   }
 
   function defaultGenerateCrashPoint() {
-    // Weighted random crash point with house edge
     const rand = Math.random() * 100
 
     if (rand < 75) {
@@ -322,8 +324,11 @@ export default function CrashPredictor() {
     hasSavedDataRef.current = false
 
     // Generate crash point immediately but don't start animation yet
-    crashPointRef.current = generateCrashPoint()
+    const newCrashPoint = generateCrashPoint()
+    crashPointRef.current = newCrashPoint
+
     console.log("Generated crash point:", crashPointRef.current.toFixed(2))
+    setDebugInfo(`Crash point: ${crashPointRef.current.toFixed(2)}x`)
 
     // Wait 1 second before starting the game
     setTimeout(() => {
@@ -332,7 +337,9 @@ export default function CrashPredictor() {
     }, 1000)
   }
 
+  const isRunningRef = useRef(false)
   function startGame() {
+    isRunningRef.current = true
     setIsRunning(true)
     hasSavedDataRef.current = false
     setHasCrashed(false)
@@ -347,21 +354,33 @@ export default function CrashPredictor() {
     planeShakePhaseRef.current = 0
     zoomFactorRef.current = 1.0
     zoomDirectionRef.current = 1
+    setSaveError(null)
 
     // Reinitialize grid cells for a new pattern each game
     initializeGridCells()
 
+    // Cancel any existing animation frame before starting a new one
+    cancelAnimationFrame(animationRef.current)
+
+    // Start the animation
     drawGraph()
   }
 
-  function restartGame() {
-    if (!demoMode) {
-      setIsBetting(false)
+  // Add a new function to start the game when the Start Game button is clicked
+  function startBettingGame() {
+    if (demoMode || betPlaced) {
+      setBetPlaced(false)
+      startGameWithDelay()
     }
-    setShowResults(false)
-    startGameWithDelay()
   }
 
+  // Add a reset function to cancel a placed bet
+  function cancelBet() {
+    setBetPlaced(false)
+    setIsBetting(false)
+  }
+
+  // Update the placeBet function to set betPlaced to true instead of starting the game
   function placeBet() {
     if (isRunning || isStarting) return
 
@@ -370,15 +389,16 @@ export default function CrashPredictor() {
       setDemoMode(false)
     }
 
+    // Instead of starting the game, just mark that a bet is placed
+    setBetPlaced(true)
     setIsBetting(true)
-    startGameWithDelay()
   }
 
   const hasSavedDataRef = useRef(false)
 
   async function cashOut() {
     if (isBetting && isRunning && !hasSavedDataRef.current) {
-      hasSavedDataRef.current = true  // prevent further execution
+      hasSavedDataRef.current = true // prevent further execution
       setIsBetting(false)
       const winAmount = betAmount * multiplier
       const profitValue = winAmount - betAmount
@@ -404,7 +424,7 @@ export default function CrashPredictor() {
       setShowResults(true)
 
       const crashData = {
-        timestamp: serverTimestamp(),
+        timestamp: new Date().toISOString(),
         crashPoint: crashPointRef.current,
         betAmount,
         cashoutMultiplier,
@@ -416,17 +436,19 @@ export default function CrashPredictor() {
 
       console.log("💾 Saving crash data:", crashData)
 
-      try {
-        await addDoc(collection(db, "crashHistory"), crashData)
-        console.log("✅ Crash data saved to Firebase")
-      } catch (error) {
-        console.error("❌ Error saving crash data:", error)
-      }
+      // try {
+      //   setIsSaving(true)
+      //   await saveCrashData(crashData)
+      //   console.log("✅ Crash data saved to backend")
+      // } catch (error) {
+      //   console.error("❌ Error saving crash data:", error)
+      //   setSaveError("Failed to save crash data to backend")
+      // } finally {
+      //   setIsSaving(false)
+      // }
     }
   }
 
-
-  
   function calculateStatistics() {
     // Run simulations to calculate win rate and expected value
     const numSimulations = 10000
@@ -516,8 +538,8 @@ export default function CrashPredictor() {
       zoomFactorRef.current = Math.max(0.8, zoomFactorRef.current - 0.01)
     }
 
-    // Fill with solid dark blue first (matching the image)
-    ctx.fillStyle = "#0a1735" // Darker blue to match the image
+    // Fill with solid dark blue first
+    ctx.fillStyle = "#000" // Black background
     ctx.fillRect(-shakeOffset.x, -shakeOffset.y, width, height)
 
     // Apply zoom transformation
@@ -529,7 +551,7 @@ export default function CrashPredictor() {
     // Draw sunburst/radial rays
     const centerX = width / 2
     const centerY = height / 2
-    const numRays = 24
+    const numRays = 36
 
     for (let i = 0; i < numRays; i++) {
       const angle = (i * 2 * Math.PI) / numRays
@@ -542,10 +564,10 @@ export default function CrashPredictor() {
         centerY + Math.sin(angle) * height * 1.5,
       )
 
-      // Adjust colors to match the image better
-      rayGradient.addColorStop(0, "rgba(30, 64, 124, 0.7)")
-      rayGradient.addColorStop(0.3, "rgba(20, 40, 80, 0.5)")
-      rayGradient.addColorStop(1, "rgba(10, 23, 53, 0.9)")
+      // Darker blue colors to match the image
+      rayGradient.addColorStop(0, "rgba(10, 30, 60, 0.7)")
+      rayGradient.addColorStop(0.3, "rgba(5, 15, 40, 0.5)")
+      rayGradient.addColorStop(1, "rgba(0, 5, 20, 0.9)")
 
       ctx.fillStyle = rayGradient
 
@@ -558,28 +580,17 @@ export default function CrashPredictor() {
 
     // Add a subtle blue radial gradient overlay for the glow effect
     const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, width * 0.7)
-    glowGradient.addColorStop(0, "rgba(40, 120, 200, 0.15)")
-    glowGradient.addColorStop(0.5, "rgba(20, 60, 120, 0.1)")
+    glowGradient.addColorStop(0, "rgba(20, 60, 120, 0.15)")
+    glowGradient.addColorStop(0.5, "rgba(10, 30, 60, 0.1)")
     glowGradient.addColorStop(1, "rgba(0, 0, 0, 0)")
 
     ctx.fillStyle = glowGradient
     ctx.fillRect(-shakeOffset.x, -shakeOffset.y, width, height)
 
-    // Draw grid dots to match the image
-    ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
-    const dotSpacing = width / 20
-    for (let x = 0; x < 20; x++) {
-      for (let y = 0; y < 20; y++) {
-        ctx.beginPath()
-        ctx.arc(x * dotSpacing, y * dotSpacing, 1, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-
     ctx.restore()
   }
 
-  function drawGraph() {
+  async function drawGraph() {
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -593,14 +604,31 @@ export default function CrashPredictor() {
     const elapsed = ((Date.now() - startTimeRef.current) / 100) * gameSpeedFactor.current
     const newMultiplier = Math.pow(1.06, elapsed)
 
+    // If game just started, update state to reflect this
+    if (!isRunning) {
+      setIsRunning(true)
+      setHasCrashed(false)
+      setShowResults(false)
+      setMultiplier(1.0)
+      setProfit(null)
+    }
+
     // Calculate shake offset based on multiplier
     shakeOffsetRef.current = calculateShakeOffset(newMultiplier)
 
     // Draw background with shake effect
     drawRadialBackground(ctx, canvas.width, canvas.height, shakeOffsetRef.current, newMultiplier)
 
-    // Check if crashed
-    if (newMultiplier >= crashPointRef.current && isRunning) {
+    // Debug info - update current multiplier and crash point
+    setDebugInfo(`Current: ${newMultiplier.toFixed(2)}x | Crash at: ${crashPointRef.current.toFixed(2)}x`)
+
+    // Check if crashed - THIS IS THE KEY PART THAT NEEDS FIXING
+    if (newMultiplier >= crashPointRef.current && isRunningRef.current) {
+      console.log(
+        `CRASH DETECTED: Current multiplier ${newMultiplier.toFixed(2)} >= Crash point ${crashPointRef.current.toFixed(2)}`,
+      )
+
+      isRunningRef.current = false
       setIsRunning(false)
       setHasCrashed(true)
       setShowGridAnimation(true)
@@ -611,23 +639,16 @@ export default function CrashPredictor() {
       // Auto cashout if betting
       if (isBetting) {
         cashOut()
-        // Show results only after a crash when betting
         setShowResults(true)
       } else {
-        // If not betting, still calculate statistics but only show results after crash
         calculateStatistics()
         setShowResults(true)
       }
 
-      // Save data to Firebase after crash
-      // setTimeout(() => saveCrashDataToFirebase(), 500)
-
-      // Clear any existing restart timer
       if (restartTimerRef.current) {
         clearTimeout(restartTimerRef.current)
       }
 
-      // Draw crash text
       const width = canvas.width
       const height = canvas.height
 
@@ -640,44 +661,79 @@ export default function CrashPredictor() {
       ctx.font = "bold 24px Arial"
       ctx.fillText("CRASHED", width / 2, height / 2)
 
-      // Add a "Play Again" button directly on the canvas
       if (!showResults) {
         ctx.font = "bold 18px Arial"
         ctx.fillStyle = "#ffffff"
         ctx.fillText("Click to Play Again", width / 2, height / 2 + 40)
       }
 
+      // Save crash data to backend when game crashes
+      if (!hasSavedDataRef.current) {
+        hasSavedDataRef.current = true
+
+        // Calculate statistics directly instead of using state values
+        const numSimulations = 10000
+        let wins = 0
+        let totalProfit = 0
+
+        for (let i = 0; i < numSimulations; i++) {
+          const simCrashPoint = generateCrashPoint()
+          const win = simCrashPoint >= crashPointRef.current
+          const profit = win ? betAmount * (crashPointRef.current - 1) : -betAmount
+
+          if (win) wins++
+          totalProfit += profit
+        }
+
+        const calculatedWinRate = (wins / numSimulations) * 100
+        const calculatedExpectedValue = totalProfit / numSimulations
+
+        // Update state for display
+        setWinRate(calculatedWinRate)
+        setExpectedValue(calculatedExpectedValue)
+
+        const crashData = {
+          timestamp: new Date().toISOString(),
+          crashPoint: crashPointRef.current,
+          betAmount: isBetting ? betAmount : 0,
+          cashoutMultiplier: isBetting ? cashoutMultiplier : 0,
+          userCashedOut: false,
+          winRate: calculatedWinRate,
+          expectedValue: calculatedExpectedValue,
+          profit: -betAmount,
+        }
+
+        console.log("💾 Saving crash data on crash:", crashData)
+
+        try {
+          await addDoc(collection(db, "crashHistory"), crashData)
+          console.log("✅ Crash data saved to Firebase")
+        } catch (error) {
+          console.error("❌ Error saving crash data:", error)
+        }
+      }
+
       return
     }
 
-    // Auto cashout if enabled and reached target multiplier
     if (isBetting && newMultiplier >= cashoutMultiplier && isRunning) {
       cashOut()
     }
 
     setMultiplier(Number.parseFloat(newMultiplier.toFixed(2)))
 
-    // Draw graph line with animation
     const height = canvas.height
     const width = canvas.width
-
-    // Calculate animation progress
     const animationDuration = 6000
     const animationProgress = Math.min(1, (Date.now() - animationStartTimeRef.current) / animationDuration)
     const easedProgressValue = 1 - (1 - animationProgress) * (1 - animationProgress)
-
-    // Calculate how much of the curve to draw
     const maxProgressWidth = width - borderPadding - rightPadding
     const progressWidth = Math.min(maxProgressWidth, width * easedProgressValue)
 
-    // Store points for the curve to use for drawing the plane
     const curvePoints: { x: number; y: number }[] = []
-
-    // Draw the filled area under the curve with animation
     ctx.beginPath()
     ctx.moveTo(0, height)
 
-    // Create a curve that starts flat and becomes steeper - using exponential curve
     for (let x = 0; x <= progressWidth; x++) {
       const xPercent = x / width
       const exponent = 2.5
@@ -688,18 +744,15 @@ export default function CrashPredictor() {
       curvePoints.push({ x, y })
     }
 
-    // Fill the area under the curve
     ctx.lineTo(progressWidth, height)
     ctx.closePath()
 
-    // Red gradient fill
     const gradient = ctx.createLinearGradient(0, 0, 0, height)
     gradient.addColorStop(0, "rgba(255, 0, 51, 0.9)")
     gradient.addColorStop(1, "rgba(255, 0, 51, 0.3)")
     ctx.fillStyle = gradient
     ctx.fill()
 
-    // Draw the line
     ctx.beginPath()
     ctx.moveTo(0, height)
 
@@ -711,12 +764,10 @@ export default function CrashPredictor() {
       ctx.lineTo(x, y)
     }
 
-    // Bright red for the line
     ctx.strokeStyle = "#ff0033"
     ctx.lineWidth = 4
     ctx.stroke()
 
-    // Draw the plane at the end of the line
     if (curvePoints.length > 0 && !hasCrashed) {
       const planePosition = curvePoints[curvePoints.length - 1]
       const planeShake = calculateAircraftShake(newMultiplier, planeShakePhaseRef.current)
@@ -724,20 +775,12 @@ export default function CrashPredictor() {
       ctx.save()
       ctx.translate(planePosition.x + planeShake.x, planePosition.y + planeShake.y)
 
-      // Don't rotate the GIF plane as it might distort the animation
-      // Just draw it at the current position
-
-      // Draw the plane image if loaded
       if (planeRef.current) {
         const imgWidth = aircraftWidth
         const imgHeight = aircraftHeight
-        // Center the image at the current position
         ctx.drawImage(planeRef.current, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight)
       } else {
-        // Fallback to drawing a simple red plane
         ctx.fillStyle = "#ff0033"
-
-        // Main body
         ctx.beginPath()
         ctx.moveTo(15, 0)
         ctx.lineTo(-15, -8)
@@ -746,7 +789,6 @@ export default function CrashPredictor() {
         ctx.closePath()
         ctx.fill()
 
-        // Wings
         ctx.beginPath()
         ctx.moveTo(0, -5)
         ctx.lineTo(-5, -20)
@@ -763,7 +805,6 @@ export default function CrashPredictor() {
         ctx.closePath()
         ctx.fill()
 
-        // Tail
         ctx.beginPath()
         ctx.moveTo(-20, 0)
         ctx.lineTo(-30, -10)
@@ -776,7 +817,6 @@ export default function CrashPredictor() {
       ctx.restore()
     }
 
-    // Draw multiplier text
     ctx.globalAlpha = animationProgress
     ctx.font = "bold 64px Arial"
     ctx.fillStyle = "#ffffff"
@@ -785,21 +825,20 @@ export default function CrashPredictor() {
     ctx.fillText(`${newMultiplier.toFixed(2)}x`, width / 2, height / 2)
     ctx.globalAlpha = 1.0
 
-    // Draw profit message
     if (profit !== null) {
       ctx.font = "bold 24px Arial"
       ctx.fillStyle = "#00ff00"
       ctx.fillText(`+${profit.toFixed(2)}`, width / 2, height / 2 - 40)
     }
 
-    // Continue animation
-    if (isRunning) {
+    // Continue animation only if still running
+    if (isRunningRef.current) {
       animationRef.current = requestAnimationFrame(drawGraph)
     }
   }
 
   function decreaseBet() {
-    setBetAmount((prev) => Math.max(0.1, prev - 10))
+    setBetAmount((prev) => Math.max(0.1, prev - 1))
     setSelectedPreset(null)
   }
 
@@ -823,10 +862,6 @@ export default function CrashPredictor() {
     setCashoutMultiplier((prev) => prev + 0.1)
   }
 
-  function toggleAutoStart() {
-    setAutoStart(!autoStart)
-  }
-
   function resetGame() {
     setIsBetting(false)
     setIsRunning(false)
@@ -834,31 +869,9 @@ export default function CrashPredictor() {
     setShowResults(false)
     setMultiplier(1.0)
     setProfit(null)
-
+    window.location.reload()
     // Start a new game with delay
     startGameWithDelay()
-  }
-
-  // Function to toggle demo mode
-  function toggleDemoMode() {
-    const newDemoMode = !demoMode
-    setDemoMode(newDemoMode)
-
-    if (newDemoMode) {
-      // If turning on demo mode, start the game with delay
-      setIsBetting(false)
-      setShowResults(false)
-      setHasCrashed(false)
-      startGameWithDelay()
-    } else {
-      // If turning off demo mode, stop the current game
-      setIsRunning(false)
-      setHasCrashed(false)
-      cancelAnimationFrame(animationRef.current)
-      if (restartTimerRef.current) {
-        clearTimeout(restartTimerRef.current)
-      }
-    }
   }
 
   // Handle canvas click for restarting the game
@@ -868,22 +881,27 @@ export default function CrashPredictor() {
     }
   }
 
-  console.log('demoMode',demoMode)
-
- const router = useRouter()
+  const router = useRouter()
 
   const handleLogout = () => {
     localStorage.removeItem("token") // Remove token from localStorage
-    router.replace("/admin")
+    router.replace("/login")
   }
 
   return (
     <div className="w-full max-w-4xl">
-      {/* Header */}
-      <div className="bg-amber-500 text-white font-bold text-center py-2 rounded-t-lg">FUN MODE</div>
+      <div className="bg-amber-500 text-white font-bold py-2 rounded-t-lg flex justify-between items-center px-4">
+        <span className="text-center w-full">FUN MODE</span>
+        <button onClick={handleLogout} className="text-sm bg-gray-300 text-black px-3 py-1 rounded-lg">
+          Logout
+        </button>
+      </div>
+
+      {/* Debug info */}
+      <div className="bg-gray-800 hidden text-white text-xs p-1">{debugInfo}</div>
 
       {/* Game area */}
-      <div className="relative bg-gray-950 border-2 border-gray-800 h-[400px] w-full overflow-hidden">
+      <div className="relative bg-gray-950 h-[400px] w-full overflow-hidden">
         <canvas
           ref={canvasRef}
           width={800}
@@ -892,8 +910,29 @@ export default function CrashPredictor() {
           onClick={handleCanvasClick}
         />
 
-        
+        {/* Start Game button when bet is placed */}
+        {betPlaced && !isRunning && !isStarting && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-4">
+              <Button
+                onClick={() => {
+                  setDemoMode(true)
+                  startBettingGame()
+                }}
+                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Start Demo
+              </Button>
 
+              <button
+                onClick={cancelBet}
+                className="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white rounded-md"
+              >
+                Cancel Bet
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Starting delay overlay */}
         {isStarting && (
@@ -943,6 +982,11 @@ export default function CrashPredictor() {
             </div>
           </div>
         )}
+
+        {/* Save error notification */}
+        {saveError && (
+          <div className="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-md text-sm">{saveError}</div>
+        )}
       </div>
 
       {/* Results overlay */}
@@ -972,36 +1016,41 @@ export default function CrashPredictor() {
                 <p className="text-gray-400 text-sm">(Bet amount: {betAmount.toFixed(2)})</p>
               </div>
 
-              <Button onClick={resetGame} className="w-full">
-                Play Again
-              </Button>
+              {isSaving ? (
+                <div className="text-amber-400">Saving crash data...</div>
+              ) : (
+                <Button onClick={resetGame} className="w-full">
+                  Play Again
+                </Button>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Controls */}
-      <div className="bg-gray-900 p-4 rounded-b-lg">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              {/* <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Bet</div>
-              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Manual</div> */}
-              {isRunning ? (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <button
-              onClick={toggleDemoMode}
-              className="px-8 py-4 text-xl font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-transform pointer-events-auto uppercase"
-            >
-              {demoMode ? "Start Demo" : "Start"}
-            </button>
-          </div>
-        ):null}
-            </div>
+      <div className="bg-gray-900 p-2">
+        {/* Tab navigation */}
+        <div className="flex mb-2">
+          <button
+            className={`flex-1 py-2 text-center ${activeTab === "bet" ? "bg-gray-800 text-white" : "text-gray-400"}`}
+            onClick={() => setActiveTab("bet")}
+          >
+            Bet
+          </button>
+          <button
+            className={`flex-1 py-2 text-center ${activeTab === "auto" ? "bg-gray-800 text-white" : "text-gray-400"}`}
+            onClick={() => setActiveTab("auto")}
+          >
+            Auto
+          </button>
+        </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <button
-                className="bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center"
+                className="bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center"
                 onClick={decreaseBet}
                 disabled={(isRunning || isStarting) && !demoMode}
               >
@@ -1019,7 +1068,7 @@ export default function CrashPredictor() {
               </div>
 
               <button
-                className="bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center"
+                className="bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center"
                 onClick={increaseBet}
                 disabled={(isRunning || isStarting) && !demoMode}
               >
@@ -1027,54 +1076,42 @@ export default function CrashPredictor() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {isLoadingData ? (
-                <div className="col-span-2 text-center py-2 text-gray-400">Loading presets...</div>
-              ) : (
-                presets.map((preset, index) => (
-                  <button
-                    key={index}
-                    className={cn(
-                      "text-white px-2 py-1 rounded text-center",
-                      selectedPreset === index ? "bg-gray-600" : "bg-gray-800",
-                    )}
-                    onClick={() => selectPreset(preset.value, index)}
-                    disabled={(isRunning || isStarting) && !demoMode}
-                  >
-                    {preset.label}
-                  </button>
-                ))
-              )}
+            <div className="grid grid-cols-2 gap-1">
+              {presets.map((preset, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "text-white px-2 py-1 rounded text-center text-sm",
+                    selectedPreset === index ? "bg-gray-600" : "bg-gray-800",
+                  )}
+                  onClick={() => selectPreset(preset.value, index)}
+                  disabled={(isRunning || isStarting) && !demoMode}
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
 
             <button
               className={cn(
-                "font-bold py-3 px-4 rounded-md w-full text-center text-white",
-                isBetting
-                  ? "bg-red-600 hover:bg-red-700"
-                  : (isRunning || isStarting) && !demoMode
-                    ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700",
+                "font-bold py-2 px-4 rounded-md w-full text-center text-white bg-green-600",
+                isBetting && isRunning && "bg-red-600",
+                ((isRunning || isStarting) && !isBetting) || betPlaced ? "bg-gray-600 cursor-not-allowed" : "",
               )}
-              onClick={isBetting ? cashOut : placeBet}
-              disabled={((isRunning || isStarting) && !isBetting) || (demoMode && (isRunning || isStarting))}
+              onClick={isBetting && isRunning ? cashOut : placeBet}
+              disabled={((isRunning || isStarting) && !isBetting) || betPlaced}
             >
-              {isBetting ? "CASH OUT" : isStarting ? "STARTING..." : "BET"}
+              {isBetting && isRunning ? "CASH OUT" : betPlaced ? "BET PLACED" : isStarting ? "STARTING..." : "BET"}
               <br />
               {betAmount.toFixed(2)} CNY
             </button>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              {/* <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Auto</div>
-              <div className="bg-gray-800 text-white px-4 py-1 rounded-md w-20 text-center">Cashout</div> */}
-            </div>
-
+          <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <button
                 className={cn(
-                  "bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center",
+                  "bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center",
                   (isBetting || isRunning || isStarting) && "opacity-50 cursor-not-allowed",
                 )}
                 onClick={decreaseCashout}
@@ -1089,7 +1126,7 @@ export default function CrashPredictor() {
 
               <button
                 className={cn(
-                  "bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center",
+                  "bg-gray-800 text-white w-8 h-8 rounded-full flex items-center justify-center",
                   (isBetting || isRunning || isStarting) && "opacity-50 cursor-not-allowed",
                 )}
                 onClick={increaseCashout}
@@ -1106,35 +1143,19 @@ export default function CrashPredictor() {
               </div>
             </div>
 
-            <div className="flex flex-col space-y-2">
-              <button
-                className={cn(
-                  "font-bold py-3 px-4 rounded-md w-full text-center text-white",
-                  isBetting
-                    ? "bg-red-600 hover:bg-red-700"
-                    : (isRunning || isStarting) && !demoMode
-                      ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700",
-                )}
-                onClick={isBetting ? cashOut : placeBet}
-                disabled={((isRunning || isStarting) && !isBetting) || (demoMode && (isRunning || isStarting))}
-              >
-                {isBetting ? "CASH OUT" : isStarting ? "STARTING..." : "AUTO BET"}
-                <br />
-                {betAmount.toFixed(2)} CNY @ {cashoutMultiplier.toFixed(2)}x
-              </button>
-
-              <button
-                className={cn(
-                  "py-2 px-4 rounded-md text-white text-sm",
-                  autoStart ? "bg-green-600 hover:bg-green-700" : "bg-gray-600 hover:bg-gray-700",
-                )}
-                onClick={toggleAutoStart}
-                disabled={(isRunning || isStarting) && !demoMode}
-              >
-                Auto Restart: {autoStart ? "ON" : "OFF"}
-              </button>
-            </div>
+            <button
+              className={cn(
+                "font-bold py-2 px-4 rounded-md w-full text-center text-white bg-green-600",
+                isBetting && isRunning && "bg-red-600",
+                ((isRunning || isStarting) && !isBetting) || betPlaced ? "bg-gray-600 cursor-not-allowed" : "",
+              )}
+              onClick={isBetting && isRunning ? cashOut : placeBet}
+              disabled={((isRunning || isStarting) && !isBetting) || betPlaced}
+            >
+              {isBetting && isRunning ? "CASH OUT" : betPlaced ? "BET PLACED" : "BET"}
+              <br />
+              {betAmount.toFixed(2)} CNY @ {cashoutMultiplier.toFixed(2)}x
+            </button>
           </div>
         </div>
       </div>

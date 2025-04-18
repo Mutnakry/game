@@ -1,4 +1,5 @@
 
+
 // "use client"
 
 // import { useState } from "react"
@@ -55,7 +56,12 @@
 //   const [loading, setLoading] = useState<boolean>(false)
 //   const [showPopup, setShowPopup] = useState<boolean>(false)
 //   const [accAtive, setAccAtive] = useState<boolean>(false)
-//   const [inactiveUserData, setInactiveUserData] = useState<{ email: string; username: string } | null>(null)
+//   const [inactiveUserData, setInactiveUserData] = useState<{
+//     email: string
+//     username: string
+//     phone: string
+//     message?: string
+//   } | null>(null)
 
 //   const router = useRouter()
 //   const { toast } = useToast()
@@ -92,6 +98,9 @@
 //           setInactiveUserData({
 //             email: user.email || "",
 //             username: userData.username || "",
+//             phone: userData.phone || "",
+//             message:
+//               "Your account is inactive. Please contact our customer service via WhatsApp at +977-XXXXXXXXXX to activate your account. You may need to complete a top-up to activate your account.",
 //           })
 //         }
 //       } else {
@@ -122,6 +131,11 @@
 //     }
 //   }
 
+//   const validatePhone = (phone: string): boolean => {
+//     // Check if phone is a valid number and has the correct length
+//     return /^\d{10}$/.test(phone)
+//   }
+
 //   const handleRegister = async () => {
 //     if (!email || !password || !username || !phone) {
 //       toast({
@@ -132,13 +146,22 @@
 //       return
 //     }
 
+//     if (!validatePhone(phone)) {
+//       toast({
+//         variant: "destructive",
+//         title: "Invalid Phone Number",
+//         description: "Please enter a valid 10-digit phone number",
+//       })
+//       return
+//     }
+
 //     setLoading(true)
 
 //     try {
 //       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 //       await setDoc(doc(db, "users", userCredential.user.uid), {
 //         username,
-//         phone,
+//         phone: `+977${phone}`, // Store with country code
 //         status: "inactive",
 //       })
 //       setShowPopup(true)
@@ -223,17 +246,22 @@
 //               </div>
 //               {!isLogin && (
 //                 <div className="relative w-full">
-//                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+//                   {/* <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
 //                     <FaPhoneAlt />
-//                   </div>
+//                   </div> */}
 //                   <div className="flex">
 //                     <div className="bg-gray-700 text-white p-2 rounded-l flex items-center">+977</div>
 //                     <input
-//                       type="text"
+//                       type="tel"
 //                       placeholder="WhatsApp"
 //                       required
 //                       value={phone}
-//                       onChange={(e) => setPhone(e.target.value)}
+//                       onChange={(e) => {
+//                         // Only allow digits
+//                         const value = e.target.value.replace(/\D/g, "")
+//                         setPhone(value)
+//                       }}
+//                       maxLength={10}
 //                       className="w-full p-2 rounded-r bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
 //                     />
 //                   </div>
@@ -252,7 +280,7 @@
 //             <div className="mt-4 text-sm">
 //               {isLogin ? (
 //                 <p>
-//                   Don't have an account?{" "}
+//                   Don&apos;t have an account?{" "}
 //                   <span
 //                     className="text-blue-400 cursor-pointer"
 //                     onClick={() => {
@@ -309,20 +337,18 @@
 
 
 
-
 "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { FaUser, FaPhoneAlt, FaRegEyeSlash, FaRegEye } from "react-icons/fa"
-import { MdEmail } from "react-icons/md"
+import { FaUser, FaRegEyeSlash, FaRegEye } from "react-icons/fa"
 import { PiLockKey } from "react-icons/pi"
 
 // Firebase imports
 import { initializeApp } from "firebase/app"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from "firebase/auth"
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore"
+import { getFirestore, doc, setDoc, collection, query, where, getDocs } from "firebase/firestore"
 
 // Components
 import UopupRegisterSuccess from "@/components/UopupRegisterSuccess"
@@ -353,12 +379,17 @@ type User = {
   status: string
 }
 
+// Helper function to generate a fake email from phone number
+// This is needed because Firebase requires email for authentication
+const generateEmailFromPhone = (phone: string): string => {
+  return `${phone.replace(/\+/g, "")}@phoneuser.com`
+}
+
 export default function LoginPage() {
   // Form state
-  const [email, setEmail] = useState<string>("")
+  const [phone, setPhone] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const [username, setUsername] = useState<string>("")
-  const [phone, setPhone] = useState<string>("")
   const [showPassword, setShowPassword] = useState<boolean>(false)
 
   // UI state
@@ -367,7 +398,7 @@ export default function LoginPage() {
   const [showPopup, setShowPopup] = useState<boolean>(false)
   const [accAtive, setAccAtive] = useState<boolean>(false)
   const [inactiveUserData, setInactiveUserData] = useState<{
-    email: string
+    email: string // Keep this for compatibility with AccountInactiveLogin component
     username: string
     phone: string
     message?: string
@@ -377,11 +408,20 @@ export default function LoginPage() {
   const { toast } = useToast()
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!phone || !password) {
       toast({
         variant: "destructive",
-        title: "Email Error",
-        description: "Please check your Email",
+        title: "Login Error",
+        description: "Please enter your phone number and password",
+      })
+      return
+    }
+
+    if (!validatePhone(phone)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: "Please enter a valid 9 or 10-digit phone number",
       })
       return
     }
@@ -389,16 +429,25 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      // Format the phone number with country code
+      const formattedPhone = `+977${phone}`
+
+      // Generate email from phone for Firebase authentication
+      const generatedEmail = generateEmailFromPhone(formattedPhone)
+
+      // Authenticate with Firebase using the generated email
+      const userCredential = await signInWithEmailAndPassword(auth, generatedEmail, password)
       const user = userCredential.user
 
-      // Store token in localStorage for your existing app to use
+      // Store token in localStorage
       localStorage.setItem("token", await user.getIdToken())
 
-      const userDoc = await getDoc(doc(db, "users", user.uid))
+      // Get user data from Firestore
+      const userDoc = await getDocs(query(collection(db, "users"), where("phone", "==", formattedPhone)))
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
+      if (!userDoc.empty) {
+        const userData = userDoc.docs[0].data()
+
         if (userData.status === "active") {
           router.push("/crash-game")
         } else {
@@ -406,7 +455,7 @@ export default function LoginPage() {
           localStorage.removeItem("token")
           setAccAtive(true)
           setInactiveUserData({
-            email: user.email || "",
+            email: generatedEmail, // Include email for component compatibility
             username: userData.username || "",
             phone: userData.phone || "",
             message:
@@ -414,19 +463,13 @@ export default function LoginPage() {
           })
         }
       } else {
-        await auth.signOut()
-        localStorage.removeItem("token")
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "User data not found in database.",
-        })
+        throw new Error("user-data-not-found")
       }
     } catch (error: any) {
-      let errorMessage = "Login failed. Please check your Email and Password."
+      let errorMessage = "Login failed. Please check your phone number and password."
 
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-        errorMessage = "Invalid email or password"
+        errorMessage = "Invalid phone number or password"
       } else if (error.code === "auth/too-many-requests") {
         errorMessage = "Too many failed login attempts. Please try again later."
       }
@@ -442,12 +485,12 @@ export default function LoginPage() {
   }
 
   const validatePhone = (phone: string): boolean => {
-    // Check if phone is a valid number and has the correct length
-    return /^\d{10}$/.test(phone)
+    // Check if phone is a valid number and has the correct length (9 or 10 digits)
+    return /^\d{9,10}$/.test(phone)
   }
 
   const handleRegister = async () => {
-    if (!email || !password || !username || !phone) {
+    if (!password || !username || !phone) {
       toast({
         variant: "destructive",
         title: "Validation Error",
@@ -460,7 +503,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Invalid Phone Number",
-        description: "Please enter a valid 10-digit phone number",
+        description: "Please enter a valid 9 or 10-digit phone number",
       })
       return
     }
@@ -468,22 +511,50 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      // Format the phone number with country code
+      const formattedPhone = `+977${phone}`
+
+      // Check if phone number already exists
+      const existingUserQuery = await getDocs(query(collection(db, "users"), where("phone", "==", formattedPhone)))
+
+      if (!existingUserQuery.empty) {
+        // Instead of just showing an error, show the top-up message
+        const userData = existingUserQuery.docs[0].data()
+        setAccAtive(true)
+        setInactiveUserData({
+          email: userData.email || generateEmailFromPhone(formattedPhone),
+          username: userData.username || "",
+          phone: formattedPhone,
+          message:
+            "This phone number is already registered. Please contact our customer service via WhatsApp at +977-XXXXXXXXXX to activate your account. You may need to complete a top-up to activate your account.",
+        })
+        setLoading(false)
+        return
+      }
+
+      // Generate email from phone for Firebase authentication
+      const generatedEmail = generateEmailFromPhone(formattedPhone)
+
+      // Create user with generated email and password
+      const userCredential = await createUserWithEmailAndPassword(auth, generatedEmail, password)
+
+      // Store user data in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         username,
-        phone: `+977${phone}`, // Store with country code
+        phone: formattedPhone,
+        email: generatedEmail, // Store the generated email for reference
         status: "inactive",
+        createdAt: new Date().toISOString(),
       })
+
       setShowPopup(true)
     } catch (error: any) {
       let errorMessage = "Registration failed"
 
       if (error.code === "auth/email-already-in-use") {
-        errorMessage = "Email already in use"
+        errorMessage = "This phone number is already registered"
       } else if (error.code === "auth/weak-password") {
-        errorMessage = "Password is too weak"
-      } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Invalid email address"
+        errorMessage = "Password is too weak. Please use at least 6 characters."
       }
 
       toast({
@@ -522,17 +593,22 @@ export default function LoginPage() {
                 </div>
               )}
               <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                  <MdEmail />
+                <div className="flex">
+                  <div className="bg-gray-700 text-white p-2 rounded-l flex items-center">+977</div>
+                  <input
+                    type="tel"
+                    placeholder="What app"
+                    required
+                    value={phone}
+                    onChange={(e) => {
+                      // Only allow digits
+                      const value = e.target.value.replace(/\D/g, "")
+                      setPhone(value)
+                    }}
+                    maxLength={10}
+                    className="w-full p-2 rounded-r bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  required
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-2 pl-10 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                />
               </div>
               <div className="relative w-full">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -554,29 +630,6 @@ export default function LoginPage() {
                   {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                 </button>
               </div>
-              {!isLogin && (
-                <div className="relative w-full">
-                  {/* <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                    <FaPhoneAlt />
-                  </div> */}
-                  <div className="flex">
-                    <div className="bg-gray-700 text-white p-2 rounded-l flex items-center">+977</div>
-                    <input
-                      type="tel"
-                      placeholder="WhatsApp"
-                      required
-                      value={phone}
-                      onChange={(e) => {
-                        // Only allow digits
-                        const value = e.target.value.replace(/\D/g, "")
-                        setPhone(value)
-                      }}
-                      maxLength={10}
-                      className="w-full p-2 rounded-r bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             <motion.button

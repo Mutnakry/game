@@ -106,11 +106,26 @@ export function GameHistory() {
         // Update hasPrevPage based on current page
         setHasPrevPage(currentPage > 1)
 
-        const crashData = docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          timestamp: doc.data().timestamp?.toDate(), // Convert Firestore timestamp to Date
-        })) as CrashRecord[]
+        const crashData = docs.map((doc) => {
+          const data = doc.data()
+          // Handle both Firestore Timestamp and regular Date objects
+          let timestamp
+          if (data.timestamp && typeof data.timestamp.toDate === "function") {
+            timestamp = data.timestamp.toDate()
+          } else if (data.timestamp instanceof Date) {
+            timestamp = data.timestamp
+          } else if (typeof data.timestamp === "string") {
+            timestamp = new Date(data.timestamp)
+          } else {
+            timestamp = null
+          }
+
+          return {
+            id: doc.id,
+            ...data,
+            timestamp,
+          }
+        }) as CrashRecord[]
 
         setCrashes(crashData)
       } catch (err) {
@@ -360,7 +375,7 @@ export function GameHistory() {
                             : "Cashed Out"
                           : "Crashed"}
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <button
                           onClick={() => {
