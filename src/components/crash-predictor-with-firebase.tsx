@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -5,9 +6,9 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 // // Add Firebase imports at the top of the file
 import { db } from "./firebase-config"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { collection, addDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
-
+import useAutoLogout from "@/components/auth/useAutoLogout"
 
 type MultiplierRange = {
   id: string
@@ -51,7 +52,6 @@ export default function CrashGame() {
     { value: 20.0, label: "20.00" },
     { value: 50.0, label: "50.00" },
     { value: 100.0, label: "100.00" },
-    { value: 200.0, label: "200.00" },
   ])
 
   const [multiplierRanges, setMultiplierRanges] = useState<MultiplierRange[]>([])
@@ -189,6 +189,21 @@ export default function CrashGame() {
       }
     }
   }, [])
+
+  // Add this useEffect hook after the other useEffect hooks in the component
+  useEffect(() => {
+    // Load the plane image
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.src = "https://res.cloudinary.com/dy6z3h1dr/image/upload/v1743943068/Aviator_GiF_vpajka.gif"
+    img.onload = () => {
+      planeRef.current = img
+      // Start the demo mode once the plane image is loaded
+      if (demoMode && !hasCrashed) {
+        startGameWithDelay()
+      }
+    }
+  }, [demoMode, hasCrashed]) // Add dependencies to prevent unnecessary reloads
 
   // Initialize grid cells for animation
   function initializeGridCells() {
@@ -883,8 +898,10 @@ export default function CrashGame() {
 
   const router = useRouter()
 
+  useAutoLogout() 
   const handleLogout = () => {
-    localStorage.removeItem("token") // Remove token from localStorage
+    localStorage.removeItem("token")
+    localStorage.removeItem("loginTime")
     router.replace("/login")
   }
 
@@ -937,7 +954,7 @@ export default function CrashGame() {
         {/* Starting delay overlay */}
         {isStarting && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
-            <div className="text-white text-2xl font-bold animate-pulse">Starting in 1 second...</div>
+            <div className="text-white text-2xl font-bold animate-pulse">Starting in 2 second...</div>
           </div>
         )}
 
@@ -967,7 +984,7 @@ export default function CrashGame() {
         {isLoadingData && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
             <div className="text-center">
-              <div className="text-white text-lg">Loading game data...</div>
+            <div className="text-white text-2xl font-bold animate-pulse">processing....</div>
             </div>
           </div>
         )}

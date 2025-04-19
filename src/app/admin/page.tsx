@@ -1,6 +1,6 @@
 "use client"
 
-import AdminLogin from "@/components/admin-login"
+import AdminLogin from "@/components/auth/admin-login"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
