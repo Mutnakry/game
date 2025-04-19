@@ -36,7 +36,7 @@ const UopupRegisterSuccess: React.FC<UopupRegisterSuccessProps> = ({ setShowPopu
                 <h3 className="text-lg font-semibold mb-2 font-KhmerMoul">Registration Completed!</h3>
                 <p className="mb-4">Hi Dear! Your registration is successful.</p>
                 <p >Please contact our customer service to activate your account!</p>
-                <p className="mt-2 font-KhmerMoul font-semibold text-blue-500">Contact: +123 456 7890</p>
+                <p className="mt-2 font-KhmerMoul font-semibold text-blue-500">Contact: +977 9700447095</p>
                 <button
                     className="mt-4 bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400 w-full"
                     onClick={() => {

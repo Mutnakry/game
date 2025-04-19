@@ -1,368 +1,359 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { FaCopy, FaWhatsapp } from "react-icons/fa"
-import { useToast } from "@/hooks/use-toast"
 
-interface UopupRegisterSuccessProps {
-    setAccAtive: React.Dispatch<React.SetStateAction<boolean>>
-    userData: {
-        username: string
-        phone: string
-        message?: string
-    } | null
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "framer-motion"
+import { FaCopy, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa"
+import { useToast } from "@/hooks/use-toast"
+import { db } from "./firebase-config"
+import { doc, getDoc } from "firebase/firestore"
+
+interface UserData {
+  username: string
+  phone: string
+  message?: string
 }
 
-const AccountInactiveLogin: React.FC<UopupRegisterSuccessProps> = ({ setAccAtive, userData }) => {
-    const router = useRouter()
-    const { toast } = useToast()
+interface AccountInactiveProps {
+  setAccAtive: React.Dispatch<React.SetStateAction<boolean>>
+  userData: UserData | null
+}
 
-    const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as HTMLElement
-        if (target.id === "popup-overlay") {
-            setAccAtive(false)
+// The fixed document ID for the WhatsApp configuration
+const WHAT_APP_CONFIG_ID = "single-what-app"
+
+const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, userData }) => {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [whatsappNumber, setWhatsappNumber] = useState<string>("9700447095")
+  const [whatsappLink, setWhatsappLink] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [loadingState, setLoadingState] = useState<"loading" | "success" | "error">("loading")
+  const [retryCount, setRetryCount] = useState(0)
+  const [copied, setCopied] = useState(false)
+
+  // Fetch WhatsApp configuration from Firebase
+  useEffect(() => {
+    const fetchWhatsAppConfig = async () => {
+      if (!db) {
+        setLoadingState("error")
+        return
+      }
+
+      setIsLoading(true)
+      setLoadingState("loading")
+
+      try {
+        // Try both collections to be safe
+        let docSnap = null
+        let data = null
+
+        try {
+          // First try "what-app"
+          const docRef = doc(db, "what-app", WHAT_APP_CONFIG_ID)
+          docSnap = await getDoc(docRef)
+
+          if (docSnap.exists()) {
+            data = docSnap.data()
+          } else {
+            // If not found, try "what-app1"
+            const docRef1 = doc(db, "what-app1", WHAT_APP_CONFIG_ID)
+            docSnap = await getDoc(docRef1)
+
+            if (docSnap.exists()) {
+              data = docSnap.data()
+            }
+          }
+        } catch (innerError) {
+          console.error("Error in primary fetch:", innerError)
+          // Try the fallback collection
+          const docRef1 = doc(db, "what-app1", WHAT_APP_CONFIG_ID)
+          docSnap = await getDoc(docRef1)
+
+          if (docSnap.exists()) {
+            data = docSnap.data()
+          }
         }
-    }
 
-    useEffect(() => {
-        document.addEventListener("click", handleClickOutside)
-        return () => {
-            document.removeEventListener("click", handleClickOutside)
+        if (data) {
+          // Set the WhatsApp number from Firebase
+          setWhatsappNumber(data.whatapp || "9700447095")
+
+          // Set the WhatsApp link if available
+          if (data.phoneLink) {
+            setWhatsappLink(data.phoneLink)
+          }
+
+          setLoadingState("success")
+        } else {
+          console.warn("No WhatsApp configuration found in Firebase")
+          setLoadingState("error")
         }
-    }, [])
+      } catch (error) {
+        console.error("Error fetching WhatsApp configuration:", error)
+        setLoadingState("error")
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard
-            .writeText(text)
-            .then(() => {
-                toast({
-                    title: "Copied to clipboard",
-                    description: "Account information copied successfully",
-                    variant: "success",
-                })
-            })
-            .catch((err) => {
-                console.error("Failed to copy: ", err)
-                toast({
-                    title: "Copy failed",
-                    description: "Failed to copy text to clipboard",
-                    variant: "destructive",
-                })
-            })
+        toast({
+          title: "Connection Error",
+          description: "Failed to load contact information",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
     }
 
-    const handleWhatsAppContact = () => {
-        // Replace with your actual customer service WhatsApp number
-        const phoneNumber = "+123456789"
-        const message = `Hello, I'm ${userData?.username} (${userData?.phone}). My account is inactive and I need assistance to activate it.`
+    fetchWhatsAppConfig()
+  }, [toast, retryCount])
 
-        // Create WhatsApp URL with pre-filled message
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
-
-        // Open WhatsApp in a new tab
-        window.open(whatsappUrl, "_blank")
+  const handleClickOutside = (event: MouseEvent) => {
+    const target = event.target as HTMLElement
+    if (target.id === "popup-overlay") {
+      setAccAtive(false)
     }
+  }
 
-    return (
+  useEffect(() => {
+    document.addEventListener("click", handleClickOutside)
+    return () => {
+      document.removeEventListener("click", handleClickOutside)
+    }
+  }, [])
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+
+        toast({
+          title: "Copied to clipboard",
+          description: "Account information copied successfully",
+          variant: "success",
+        })
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err)
+        toast({
+          title: "Copy failed",
+          description: "Failed to copy text to clipboard",
+          variant: "destructive",
+        })
+      })
+  }
+
+  const handleWhatsAppContact = () => {
+    // Check if we have a custom WhatsApp link from the backend
+    if (whatsappLink) {
+      // Use the custom link directly
+      window.open(whatsappLink, "_blank")
+    } else {
+      // Fallback to generating a WhatsApp URL with the number
+      // Format the WhatsApp number correctly
+      // Remove any non-digit characters and ensure there's no double plus sign
+      const cleanNumber = whatsappNumber.replace(/^\++/, "+").replace(/[^\d+]/g, "")
+
+      const message = `Hello, I'm ${userData?.username} (${userData?.phone}). My account is inactive and I need assistance to activate it.`
+
+      // Create WhatsApp URL with pre-filled message
+      const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`
+
+      // Open WhatsApp in a new tab
+      window.open(whatsappUrl, "_blank")
+    }
+  }
+
+  const handleRetry = () => {
+    setRetryCount((prev) => prev + 1)
+  }
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+        when: "beforeChildren",
+        staggerChildren: 0.1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.8,
+      transition: { duration: 0.3 },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 },
+    exit: { y: -20, opacity: 0 },
+  }
+
+  const buttonVariants = {
+    hover: { scale: 1.05 },
+    tap: { scale: 0.95 },
+    initial: { scale: 1 },
+  }
+
+  const pulseVariants = {
+    pulse: {
+      scale: [1, 1.05, 1],
+      opacity: [0.7, 1, 0.7],
+      transition: {
+        duration: 2,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: "easeInOut",
+      },
+    },
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        id="popup-overlay"
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={containerVariants}
+        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm z-50"
+      >
         <motion.div
-            id="popup-overlay"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.4 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50"
+          className="bg-white text-black p-6 rounded-xl shadow-2xl text-center w-[340px] relative overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          variants={containerVariants}
         >
-            <div className="bg-white text-black p-6 rounded-lg text-center w-80" onClick={(e) => e.stopPropagation()}>
-                <h3 className="text-lg font-semibold mb-2 font-KhmerMoul">Account Inactive</h3>
-                <p className="mb-4">{userData?.message || "Please contact our customer service to activate your account!"}</p>
-                <div className="mt-4 text-left space-y-2 bg-gray-100 p-3 rounded-md">
-                    <div className="flex text-sm justify-between items-center">
-                        <div>
-                            <p>
-                                <strong>Username:</strong> {userData?.username}
-                            </p>
-                            <p>
-                                <strong>What App:</strong> {userData?.phone}
-                            </p>
-                        </div>
-                        <button
-                            className="text-xl text-gray-500 hover:text-slate-700 pl-4"
-                            onClick={() => copyToClipboard(`\nUsername: ${userData?.username || ""}`)}
-                            aria-label="Copy account information"
-                        >
-                            <FaCopy />
-                        </button>
-                    </div>
-                </div>
+          {/* Decorative elements */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-green-200 to-green-400 rounded-full opacity-20"></div>
+          <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-yellow-200 to-yellow-400 rounded-full opacity-20"></div>
 
-                <div className="mt-4 flex flex-col gap-3">
-                    <button
-                        onClick={handleWhatsAppContact}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded flex items-center justify-center gap-2"
-                    >
-                        <FaWhatsapp className="text-xl" />
-                        Contact via WhatsApp
-                    </button>
+          <motion.div variants={itemVariants} className="relative z-10">
+            <h3 className="text-xl font-semibold mb-3 font-KhmerMoul text-gray-800">Account Inactive</h3>
+            <div className="w-16 h-1 bg-gradient-to-r from-green-400 to-yellow-400 mx-auto mb-4 rounded-full"></div>
+            <p className="mb-5 text-gray-600">
+              {userData?.message || "Please contact our customer service to activate your account!"}
+            </p>
+          </motion.div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400 w-full"
-                        onClick={() => {
-                            setAccAtive(false)
-                        }}
-                    >
-                        Back to Login
-                    </motion.button>
-                </div>
+          <motion.div
+            variants={itemVariants}
+            className="mt-5 text-left space-y-2 bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200 shadow-sm relative z-10"
+          >
+            <div className="flex text-sm justify-between items-center">
+              <div className="space-y-2">
+                <p className="flex items-center">
+                  <span className="font-medium text-gray-700 w-20">Username:</span>
+                  <span className="text-gray-800">{userData?.username}</span>
+                </p>
+                <p className="flex items-center">
+                  <span className="font-medium text-gray-700 w-20">What App:</span>
+                  <span className="text-gray-800">{whatsappNumber}</span>
+                </p>
+              </div>
+              <motion.button
+                variants={buttonVariants}
+                whileHover="hover"
+                whileTap="tap"
+                initial="initial"
+                className={`text-xl p-2 rounded-full ${copied ? "bg-green-100 text-green-600" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"}`}
+                onClick={() => copyToClipboard(`Username: ${userData?.username || ""}\nWhatsApp: ${whatsappNumber}`)}
+                aria-label="Copy account information"
+              >
+                <FaCopy />
+              </motion.button>
             </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="mt-6 flex flex-col gap-3 relative z-10">
+            {loadingState === "loading" ? (
+              <motion.button
+                disabled
+                className="w-full bg-gray-400 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+              >
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span className="ml-2">Loading contact info...</span>
+                </div>
+              </motion.button>
+            ) : loadingState === "error" ? (
+              <div className="space-y-3">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                  <FaExclamationTriangle className="text-red-500 text-xl mx-auto mb-2" />
+                  <p className="text-red-700 text-sm">Unable to load contact information</p>
+                </div>
+                <motion.button
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  onClick={handleRetry}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Try Again
+                </motion.button>
+                <motion.button
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  onClick={handleWhatsAppContact}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2"
+                >
+                  <FaWhatsapp className="text-xl" />
+                  Use Default WhatsApp
+                </motion.button>
+              </div>
+            ) : (
+              <motion.button
+                variants={buttonVariants}
+                whileHover="hover"
+                whileTap="tap"
+                onClick={handleWhatsAppContact}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-green-200"
+                animate="pulse"
+              >
+                <FaWhatsapp className="text-xl" />
+                Contact via WhatsApp
+              </motion.button>
+              
+            )}
+
+            <motion.button
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-medium py-3 px-4 rounded-lg w-full shadow-lg shadow-yellow-200/50"
+              onClick={() => {
+                setAccAtive(false)
+              }}
+            >
+              Back to Login
+            </motion.button>
+          </motion.div>
         </motion.div>
-    )
+      </motion.div>
+    </AnimatePresence>
+  )
 }
 
 export default AccountInactiveLogin
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// "use client"
-
-// import type React from "react"
-// import { useEffect, useRef } from "react"
-// import { useRouter } from "next/navigation"
-// import { motion } from "framer-motion"
-// import { FaCopy } from "react-icons/fa"
-// import { FaTelegram } from "react-icons/fa"
-// import { useToast } from "@/hooks/use-toast"
-
-// interface UopupRegisterSuccessProps {
-//   setAccAtive: React.Dispatch<React.SetStateAction<boolean>>
-//   userData: {
-//     email: string
-//     username: string
-//     phone: string
-//     message?: string
-//   } | null
-// }
-
-// const AccountInactiveLogin: React.FC<UopupRegisterSuccessProps> = ({ setAccAtive, userData }) => {
-//   const router = useRouter()
-//   const { toast } = useToast()
-//   const textAreaRef = useRef<HTMLTextAreaElement>(null)
-
-//   const handleClickOutside = (event: MouseEvent) => {
-//     const target = event.target as HTMLElement
-//     if (target.id === "popup-overlay") {
-//       setAccAtive(false)
-//     }
-//   }
-
-//   useEffect(() => {
-//     document.addEventListener("click", handleClickOutside)
-//     return () => {
-//       document.removeEventListener("click", handleClickOutside)
-//     }
-//   }, [])
-
-//   // Fallback copy function using document.execCommand
-//   const fallbackCopyTextToClipboard = (text: string): boolean => {
-//     try {
-//       if (!textAreaRef.current) return false
-
-//       const textArea = textAreaRef.current
-//       textArea.value = text
-//       textArea.style.top = "0"
-//       textArea.style.left = "0"
-//       textArea.style.position = "fixed"
-//       textArea.focus()
-//       textArea.select()
-
-//       const successful = document.execCommand("copy")
-//       return successful
-//     } catch (err) {
-//       console.error("Fallback: Could not copy text: ", err)
-//       return false
-//     } finally {
-//       if (textAreaRef.current) {
-//         textAreaRef.current.style.top = "-9999px"
-//         textAreaRef.current.style.left = "-9999px"
-//       }
-//     }
-//   }
-
-//   const copyToClipboard = (text: string) => {
-//     // Check if Clipboard API is available
-//     if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-//       navigator.clipboard
-//         .writeText(text)
-//         .then(() => {
-//           toast({
-//             title: "Copied to clipboard",
-//             description: "Account information copied successfully",
-//             variant: "success",
-//           })
-//         })
-//         .catch((err) => {
-//           console.error("Failed to copy with Clipboard API: ", err)
-//           // Try fallback method
-//           const successful = fallbackCopyTextToClipboard(text)
-//           if (successful) {
-//             toast({
-//               title: "Copied to clipboard",
-//               description: "Account information copied successfully",
-//               variant: "success",
-//             })
-//           } else {
-//             toast({
-//               title: "Copy failed",
-//               description: "Failed to copy text to clipboard",
-//               variant: "destructive",
-//             })
-//           }
-//         })
-//     } else {
-//       // Clipboard API not available, use fallback
-//       const successful = fallbackCopyTextToClipboard(text)
-//       if (successful) {
-//         toast({
-//           title: "Copied to clipboard",
-//           description: "Account information copied successfully",
-//           variant: "success",
-//         })
-//       } else {
-//         toast({
-//           title: "Copy failed",
-//           description: "Failed to copy text to clipboard",
-//           variant: "destructive",
-//         })
-//       }
-//     }
-//   }
-
-//   const handleTelegramContact = () => {
-//     // Use the specific Telegram number
-//     const telegramNumber = "0965752080"
-
-//     // Format the number for Telegram URL (remove leading zero and add country code if needed)
-//     // If this is a Cambodian number, the format would be: +855 + number without leading 0
-//     const formattedNumber = telegramNumber.startsWith("0") ? "+855" + telegramNumber.substring(1) : telegramNumber
-
-//     // Create message for clipboard
-//     const message = `Hello, I'm ${userData?.username} (${userData?.email}) (${userData?.phone}). My account is inactive and I need assistance to activate it.`
-
-//     // Try to copy the message to clipboard
-//     copyToClipboard(message)
-
-//     // Open Telegram chat with the specific number regardless of clipboard success
-//     window.open(`https://t.me/${formattedNumber}`, "_blank")
-
-//     // Show a toast to inform the user
-//     toast({
-//       title: "Opening Telegram",
-//       description: "Please paste the copied message in the chat",
-//       variant: "success",
-//     })
-//   }
-
-//   return (
-//     <motion.div
-//       id="popup-overlay"
-//       initial={{ opacity: 0, scale: 0.8 }}
-//       animate={{ opacity: 1, scale: 1 }}
-//       exit={{ opacity: 0, scale: 0.8 }}
-//       transition={{ duration: 0.4 }}
-//       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50"
-//     >
-//       {/* Hidden textarea for fallback copy method */}
-//       <textarea
-//         ref={textAreaRef}
-//         aria-hidden="true"
-//         style={{
-//           position: "fixed",
-//           top: "-9999px",
-//           left: "-9999px",
-//           width: "1px",
-//           height: "1px",
-//           padding: 0,
-//           border: "none",
-//           outline: "none",
-//           boxShadow: "none",
-//           background: "transparent",
-//         }}
-//       />
-
-//       <div className="bg-white text-black p-6 rounded-lg text-center w-80" onClick={(e) => e.stopPropagation()}>
-//         <h3 className="text-lg font-semibold mb-2 font-KhmerMoul">Account Inactive</h3>
-//         <p className="mb-4">{userData?.message || "Please contact our customer service to activate your account!"}</p>
-//         <div className="mt-4 text-left space-y-2 bg-gray-100 p-3 rounded-md">
-//           <div className="flex text-sm justify-between items-center">
-//             <div>
-//               <p>
-//                 <strong>Email:</strong> {userData?.email}
-//               </p>
-//               <p>
-//                 <strong>Username:</strong> {userData?.username}
-//               </p>
-//               <p>
-//                 <strong>Telegram:</strong> {userData?.phone}
-//               </p>
-//             </div>
-//             <button
-//               className="text-xl text-gray-500 hover:text-slate-700 pl-4"
-//               onClick={() =>
-//                 copyToClipboard(
-//                   `Email: ${userData?.email || ""}\nUsername: ${userData?.username || ""}\nTelegram: ${userData?.phone || ""}`,
-//                 )
-//               }
-//               aria-label="Copy account information"
-//             >
-//               <FaCopy />
-//             </button>
-//           </div>
-//         </div>
-
-//         <div className="mt-4 flex flex-col gap-3">
-//           <button
-//             onClick={handleTelegramContact}
-//             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded flex items-center justify-center gap-2"
-//           >
-//             <FaTelegram className="text-xl" />
-//             Contact via Telegram (0965752080)
-//           </button>
-
-//           <motion.button
-//             whileHover={{ scale: 1.05 }}
-//             whileTap={{ scale: 0.95 }}
-//             className="bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400 w-full"
-//             onClick={() => {
-//               setAccAtive(false)
-//             }}
-//           >
-//             Back to Login
-//           </motion.button>
-//         </div>
-//       </div>
-//     </motion.div>
-//   )
-// }
-
-// export default AccountInactiveLogin

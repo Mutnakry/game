@@ -1,376 +1,24 @@
-
-
-// "use client"
-
-// import { useState } from "react"
-// import { useRouter } from "next/navigation"
-// import { motion, AnimatePresence } from "framer-motion"
-// import { FaUser, FaPhoneAlt, FaRegEyeSlash, FaRegEye } from "react-icons/fa"
-// import { MdEmail } from "react-icons/md"
-// import { PiLockKey } from "react-icons/pi"
-
-// // Firebase imports
-// import { initializeApp } from "firebase/app"
-// import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from "firebase/auth"
-// import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore"
-
-// // Components
-// import UopupRegisterSuccess from "@/components/UopupRegisterSuccess"
-// import AccountInactiveLogin from "@/components/AccountInactiveLogin"
-
-// // Hooks
-// import { useToast } from "@/hooks/use-toast"
-
-// // Firebase configuration
-// const firebaseConfig = {
-//   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-//   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-//   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-//   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-//   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-//   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-// }
-
-// // Initialize Firebase
-// const app = initializeApp(firebaseConfig)
-// const auth = getAuth(app)
-// const db = getFirestore(app)
-
-// type User = {
-//   id: string
-//   username: string
-//   phone: string
-//   status: string
-// }
-
-// export default function LoginPage() {
-//   // Form state
-//   const [email, setEmail] = useState<string>("")
-//   const [password, setPassword] = useState<string>("")
-//   const [username, setUsername] = useState<string>("")
-//   const [phone, setPhone] = useState<string>("")
-//   const [showPassword, setShowPassword] = useState<boolean>(false)
-
-//   // UI state
-//   const [isLogin, setIsLogin] = useState<boolean>(true)
-//   const [loading, setLoading] = useState<boolean>(false)
-//   const [showPopup, setShowPopup] = useState<boolean>(false)
-//   const [accAtive, setAccAtive] = useState<boolean>(false)
-//   const [inactiveUserData, setInactiveUserData] = useState<{
-//     email: string
-//     username: string
-//     phone: string
-//     message?: string
-//   } | null>(null)
-
-//   const router = useRouter()
-//   const { toast } = useToast()
-
-//   const handleLogin = async () => {
-//     if (!email || !password) {
-//       toast({
-//         variant: "destructive",
-//         title: "Email Error",
-//         description: "Please check your Email",
-//       })
-//       return
-//     }
-
-//     setLoading(true)
-
-//     try {
-//       const userCredential = await signInWithEmailAndPassword(auth, email, password)
-//       const user = userCredential.user
-
-//       // Store token in localStorage for your existing app to use
-//       localStorage.setItem("token", await user.getIdToken())
-
-//       const userDoc = await getDoc(doc(db, "users", user.uid))
-
-//       if (userDoc.exists()) {
-//         const userData = userDoc.data()
-//         if (userData.status === "active") {
-//           router.push("/crash-game")
-//         } else {
-//           await auth.signOut()
-//           localStorage.removeItem("token")
-//           setAccAtive(true)
-//           setInactiveUserData({
-//             email: user.email || "",
-//             username: userData.username || "",
-//             phone: userData.phone || "",
-//             message:
-//               "Your account is inactive. Please contact our customer service via WhatsApp at +977-XXXXXXXXXX to activate your account. You may need to complete a top-up to activate your account.",
-//           })
-//         }
-//       } else {
-//         await auth.signOut()
-//         localStorage.removeItem("token")
-//         toast({
-//           variant: "destructive",
-//           title: "Authentication Error",
-//           description: "User data not found in database.",
-//         })
-//       }
-//     } catch (error: any) {
-//       let errorMessage = "Login failed. Please check your Email and Password."
-
-//       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-//         errorMessage = "Invalid email or password"
-//       } else if (error.code === "auth/too-many-requests") {
-//         errorMessage = "Too many failed login attempts. Please try again later."
-//       }
-
-//       toast({
-//         variant: "destructive",
-//         title: "Login Failed",
-//         description: errorMessage,
-//       })
-//     } finally {
-//       setLoading(false)
-//     }
-//   }
-
-//   const validatePhone = (phone: string): boolean => {
-//     // Check if phone is a valid number and has the correct length
-//     return /^\d{10}$/.test(phone)
-//   }
-
-//   const handleRegister = async () => {
-//     if (!email || !password || !username || !phone) {
-//       toast({
-//         variant: "destructive",
-//         title: "Validation Error",
-//         description: "Please fill in all fields",
-//       })
-//       return
-//     }
-
-//     if (!validatePhone(phone)) {
-//       toast({
-//         variant: "destructive",
-//         title: "Invalid Phone Number",
-//         description: "Please enter a valid 10-digit phone number",
-//       })
-//       return
-//     }
-
-//     setLoading(true)
-
-//     try {
-//       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-//       await setDoc(doc(db, "users", userCredential.user.uid), {
-//         username,
-//         phone: `+977${phone}`, // Store with country code
-//         status: "inactive",
-//       })
-//       setShowPopup(true)
-//     } catch (error: any) {
-//       let errorMessage = "Registration failed"
-
-//       if (error.code === "auth/email-already-in-use") {
-//         errorMessage = "Email already in use"
-//       } else if (error.code === "auth/weak-password") {
-//         errorMessage = "Password is too weak"
-//       } else if (error.code === "auth/invalid-email") {
-//         errorMessage = "Invalid email address"
-//       }
-
-//       toast({
-//         variant: "destructive",
-//         title: "Registration Failed",
-//         description: errorMessage,
-//       })
-//     } finally {
-//       setLoading(false)
-//     }
-//   }
-
-//   return (
-//     <div>
-//       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-4">
-//         <img className="mb-8" src="/LOGO CRASH-02.png" alt="Logo" />
-
-//         <div className="space-y-8">
-//           <div className="bg-gradient-to-tr from-gray-900 via-gray-950 to-gray-900 p-6 shadow-lg w-80 text-center">
-//             <h2 className="text-lg font-semibold mb-4">{isLogin ? "Login" : "Register Now"}</h2>
-
-//             <div className="space-y-4">
-//               {!isLogin && (
-//                 <div className="relative w-full">
-//                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-//                     <FaUser />
-//                   </div>
-//                   <input
-//                     type="text"
-//                     placeholder="Username"
-//                     required
-//                     value={username}
-//                     onChange={(e) => setUsername(e.target.value)}
-//                     className="w-full p-2 pl-10 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-//                   />
-//                 </div>
-//               )}
-//               <div className="relative w-full">
-//                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-//                   <MdEmail />
-//                 </div>
-//                 <input
-//                   type="email"
-//                   placeholder="Email"
-//                   value={email}
-//                   required
-//                   onChange={(e) => setEmail(e.target.value)}
-//                   className="w-full p-2 pl-10 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-//                 />
-//               </div>
-//               <div className="relative w-full">
-//                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-//                   <PiLockKey />
-//                 </div>
-//                 <input
-//                   type={showPassword ? "text" : "password"}
-//                   placeholder="Password"
-//                   required
-//                   value={password}
-//                   onChange={(e) => setPassword(e.target.value)}
-//                   className="w-full p-2 pl-10 pr-10 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-//                 />
-//                 <button
-//                   type="button"
-//                   className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
-//                   onClick={() => setShowPassword(!showPassword)}
-//                 >
-//                   {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
-//                 </button>
-//               </div>
-//               {!isLogin && (
-//                 <div className="relative w-full">
-//                   {/* <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-//                     <FaPhoneAlt />
-//                   </div> */}
-//                   <div className="flex">
-//                     <div className="bg-gray-700 text-white p-2 rounded-l flex items-center">+977</div>
-//                     <input
-//                       type="tel"
-//                       placeholder="WhatsApp"
-//                       required
-//                       value={phone}
-//                       onChange={(e) => {
-//                         // Only allow digits
-//                         const value = e.target.value.replace(/\D/g, "")
-//                         setPhone(value)
-//                       }}
-//                       maxLength={10}
-//                       className="w-full p-2 rounded-r bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-//                     />
-//                   </div>
-//                 </div>
-//               )}
-//             </div>
-
-//             <motion.button
-//               whileHover={{ scale: 1.05 }}
-//               whileTap={{ scale: 0.95 }}
-//               onClick={isLogin ? handleLogin : handleRegister}
-//               className="mt-4 w-full cursor-pointer bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400"
-//             >
-//               {isLogin ? "Login" : "Register"}
-//             </motion.button>
-//             <div className="mt-4 text-sm">
-//               {isLogin ? (
-//                 <p>
-//                   Don&apos;t have an account?{" "}
-//                   <span
-//                     className="text-blue-400 cursor-pointer"
-//                     onClick={() => {
-//                       setIsLogin(false)
-//                     }}
-//                   >
-//                     Register here
-//                   </span>
-//                 </p>
-//               ) : (
-//                 <p>
-//                   Already have an account?{" "}
-//                   <span
-//                     className="text-blue-400 cursor-pointer"
-//                     onClick={() => {
-//                       setIsLogin(true)
-//                     }}
-//                   >
-//                     Login here
-//                   </span>
-//                 </p>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//         {loading && (
-//           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-//             <div className="text-white text-lg animate-pulse">Processing...</div>
-//           </div>
-//         )}
-//         <div className="mt-14 flex space-x-4">
-//           <img
-//             src="https://t4.ftcdn.net/jpg/04/42/21/53/360_F_442215355_AjiR6ogucq3vPzjFAAEfwbPXYGqYVAap.jpg"
-//             width={170}
-//             height={150}
-//             alt="JetX"
-//           />
-//           <img
-//             src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXn8BNx6JAauM_mcWo9Ykmg9YRdglXdnXK-g&s"
-//             width={170}
-//             height={150}
-//             alt="Game"
-//           />
-//         </div>
-//       </div>
-
-//       <AnimatePresence>{showPopup && <UopupRegisterSuccess setShowPopup={setShowPopup} />}</AnimatePresence>
-//       <AnimatePresence>
-//         {accAtive && <AccountInactiveLogin setAccAtive={setAccAtive} userData={inactiveUserData} />}
-//       </AnimatePresence>
-//     </div>
-//   )
-// }
-
-
-
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { FaUser, FaRegEyeSlash, FaRegEye } from "react-icons/fa"
+import { FaUser, FaRegEyeSlash, FaRegEye, FaWhatsapp } from "react-icons/fa"
 import { PiLockKey } from "react-icons/pi"
 
 // Firebase imports
-import { initializeApp } from "firebase/app"
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, getAuth } from "firebase/auth"
-import { getFirestore, doc, setDoc, collection, query, where, getDocs } from "firebase/firestore"
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore"
 
 // Components
 import UopupRegisterSuccess from "@/components/UopupRegisterSuccess"
 import AccountInactiveLogin from "@/components/AccountInactiveLogin"
 
+// Import Firebase config
+import { app, auth, db } from "../firebase-config"
+
 // Hooks
 import { useToast } from "@/hooks/use-toast"
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
-const db = getFirestore(app)
 
 type User = {
   id: string
@@ -398,16 +46,75 @@ export default function LoginPage() {
   const [showPopup, setShowPopup] = useState<boolean>(false)
   const [accAtive, setAccAtive] = useState<boolean>(false)
   const [inactiveUserData, setInactiveUserData] = useState<{
-    email: string // Keep this for compatibility with AccountInactiveLogin component
+    email: string
     username: string
     phone: string
     message?: string
   } | null>(null)
 
+  // Firebase initialization check
+  const [firebaseInitialized, setFirebaseInitialized] = useState<boolean>(false)
+  const [firebaseError, setFirebaseError] = useState<string | null>(null)
+
   const router = useRouter()
   const { toast } = useToast()
 
+  // Check Firebase initialization on component mount
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+      setFirebaseError("Firebase API key is missing. Please check your environment variables.")
+      return
+    }
+
+    try {
+      if (app && auth && db) {
+        setFirebaseInitialized(true)
+      } else {
+        setFirebaseError("Firebase failed to initialize. Please check your configuration.")
+      }
+    } catch (error) {
+      console.error("Firebase initialization check error:", error)
+      setFirebaseError("Firebase initialization error. Please try again later.")
+    }
+  }, [])
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  }
+
+  // Also update the handleLogin function with similar auth checking
   const handleLogin = async () => {
+    if (!firebaseInitialized) {
+      toast({
+        variant: "destructive",
+        title: "Firebase Error",
+        description: firebaseError || "Firebase is not initialized. Please try again later.",
+      })
+      return
+    }
+
+    // Check if auth is available
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Authentication service is not available. Please try again later.",
+      })
+      return
+    }
+
     if (!phone || !password) {
       toast({
         variant: "destructive",
@@ -429,49 +136,101 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // Format the phone number with country code
+      // Format phone with country code
       const formattedPhone = `+977${phone}`
 
-      // Generate email from phone for Firebase authentication
+      // Generate email from phone for Firebase auth
       const generatedEmail = generateEmailFromPhone(formattedPhone)
 
-      // Authenticate with Firebase using the generated email
+      console.log("Attempting login with:", { email: generatedEmail, phone: formattedPhone })
+
+      // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, generatedEmail, password)
       const user = userCredential.user
 
-      // Store token in localStorage
-      localStorage.setItem("token", await user.getIdToken())
+      // Store token + login time in localStorage
+      const token = await user.getIdToken()
+      localStorage.setItem("token", token)
+      localStorage.setItem("loginTime", Date.now().toString())
+      localStorage.setItem("userId", user.uid)
 
-      // Get user data from Firestore
-      const userDoc = await getDocs(query(collection(db, "users"), where("phone", "==", formattedPhone)))
+      console.log("User authenticated:", user.uid)
+
+      // Get Firestore user data
+      const userQuery = query(collection(db, "users"), where("phone", "==", formattedPhone))
+      const userDoc = await getDocs(userQuery)
+
+      console.log("User query results:", userDoc.size)
 
       if (!userDoc.empty) {
         const userData = userDoc.docs[0].data()
+        console.log("User data:", userData)
 
         if (userData.status === "active") {
+          // Store user info in localStorage for app use
+          localStorage.setItem("username", userData.username || "")
+          localStorage.setItem("userPhone", userData.phone || "")
+
+          toast({
+            title: "Login Successful",
+            description: "Welcome back!",
+            variant: "success",
+          })
+
           router.push("/crash-game")
         } else {
           await auth.signOut()
           localStorage.removeItem("token")
+          localStorage.removeItem("loginTime")
+          localStorage.removeItem("userId")
+
           setAccAtive(true)
           setInactiveUserData({
-            email: generatedEmail, // Include email for component compatibility
+            email: generatedEmail,
             username: userData.username || "",
             phone: userData.phone || "",
             message:
-              "Your account is inactive. Please contact our customer service via WhatsApp at +977-XXXXXXXXXX to activate your account. You may need to complete a top-up to activate your account.",
+              "Your account is inactive. Please contact our customer service via WhatsApp to activate your account. You may need to complete a top-up to activate your account.",
           })
         }
       } else {
-        throw new Error("user-data-not-found")
+        // User exists in Auth but not in Firestore
+        console.error("User exists in Auth but not in Firestore")
+
+        // Create user document in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          username: phone, // Default username to phone
+          phone: formattedPhone,
+          email: generatedEmail,
+          status: "inactive",
+          createdAt: new Date().toISOString(),
+        })
+
+        // Sign out and show inactive account message
+        await auth.signOut()
+        localStorage.removeItem("token")
+        localStorage.removeItem("loginTime")
+        localStorage.removeItem("userId")
+
+        setAccAtive(true)
+        setInactiveUserData({
+          email: generatedEmail,
+          username: phone,
+          phone: formattedPhone,
+          message: "Your account needs to be activated. Please contact our customer service via WhatsApp.",
+        })
       }
     } catch (error: any) {
+      console.error("Login error:", error)
+
       let errorMessage = "Login failed. Please check your phone number and password."
 
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         errorMessage = "Invalid phone number or password"
       } else if (error.code === "auth/too-many-requests") {
         errorMessage = "Too many failed login attempts. Please try again later."
+      } else if (error.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your internet connection."
       }
 
       toast({
@@ -489,7 +248,27 @@ export default function LoginPage() {
     return /^\d{9,10}$/.test(phone)
   }
 
+  // Replace the handleRegister function with this updated version that includes proper auth checking
   const handleRegister = async () => {
+    if (!firebaseInitialized) {
+      toast({
+        variant: "destructive",
+        title: "Firebase Error",
+        description: firebaseError || "Firebase is not initialized. Please try again later.",
+      })
+      return
+    }
+
+    // Check if auth is available
+    if (!auth) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "Authentication service is not available. Please try again later.",
+      })
+      return
+    }
+
     if (!password || !username || !phone) {
       toast({
         variant: "destructive",
@@ -508,25 +287,37 @@ export default function LoginPage() {
       return
     }
 
+    if (password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Password Error",
+        description: "Password must be at least 6 characters long",
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
       // Format the phone number with country code
       const formattedPhone = `+977${phone}`
 
-      // Check if phone number already exists
-      const existingUserQuery = await getDocs(query(collection(db, "users"), where("phone", "==", formattedPhone)))
+      console.log("Attempting registration with:", { username, phone: formattedPhone })
 
-      if (!existingUserQuery.empty) {
-        // Instead of just showing an error, show the top-up message
-        const userData = existingUserQuery.docs[0].data()
+      // Check if phone number already exists
+      const existingUserQuery = query(collection(db, "users"), where("phone", "==", formattedPhone))
+      const existingUserSnapshot = await getDocs(existingUserQuery)
+
+      if (!existingUserSnapshot.empty) {
+        console.log("Phone number already exists")
+        // Phone number already exists
+        const userData = existingUserSnapshot.docs[0].data()
         setAccAtive(true)
         setInactiveUserData({
           email: userData.email || generateEmailFromPhone(formattedPhone),
           username: userData.username || "",
           phone: formattedPhone,
-          message:
-            "This phone number is already registered. Please contact our customer service via WhatsApp at +977-XXXXXXXXXX to activate your account. You may need to complete a top-up to activate your account.",
+          message: "Cannot connect to consumer. This phone number is already registered in our system.",
         })
         setLoading(false)
         return
@@ -537,24 +328,38 @@ export default function LoginPage() {
 
       // Create user with generated email and password
       const userCredential = await createUserWithEmailAndPassword(auth, generatedEmail, password)
+      console.log("User created in Auth:", userCredential.user.uid)
 
       // Store user data in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         username,
         phone: formattedPhone,
-        email: generatedEmail, // Store the generated email for reference
+        email: generatedEmail,
         status: "inactive",
         createdAt: new Date().toISOString(),
       })
 
+      console.log("User data stored in Firestore")
+
+      // Sign out after registration (user needs to be activated)
+      await auth.signOut()
+
       setShowPopup(true)
     } catch (error: any) {
+      console.error("Registration error:", error)
+
       let errorMessage = "Registration failed"
 
       if (error.code === "auth/email-already-in-use") {
         errorMessage = "This phone number is already registered"
       } else if (error.code === "auth/weak-password") {
         errorMessage = "Password is too weak. Please use at least 6 characters."
+      } else if (error.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your internet connection."
+      } else if (error.code) {
+        errorMessage = `Registration error: ${error.code}`
+      } else if (error.message) {
+        errorMessage = error.message
       }
 
       toast({
@@ -568,129 +373,230 @@ export default function LoginPage() {
   }
 
   return (
-    <div>
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-4">
-        <img className="mb-8" src="/LOGO CRASH-02.png" alt="Logo" />
-
-        <div className="space-y-8">
-          <div className="bg-gradient-to-tr from-gray-900 via-gray-950 to-gray-900 p-6 shadow-lg w-80 text-center">
-            <h2 className="text-lg font-semibold mb-4">{isLogin ? "Login" : "Register Now"}</h2>
-
-            <div className="space-y-4">
-              {!isLogin && (
-                <div className="relative w-full">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                    <FaUser />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Username"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full p-2 pl-10 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              )}
-              <div className="relative w-full">
-                <div className="flex">
-                  <div className="bg-gray-700 text-white p-2 rounded-l flex items-center">+977</div>
-                  <input
-                    type="tel"
-                    placeholder="What app"
-                    required
-                    value={phone}
-                    onChange={(e) => {
-                      // Only allow digits
-                      const value = e.target.value.replace(/\D/g, "")
-                      setPhone(value)
-                    }}
-                    maxLength={10}
-                    className="w-full p-2 rounded-r bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                  <PiLockKey />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-2 pl-10 pr-10 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
-                </button>
-              </div>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={isLogin ? handleLogin : handleRegister}
-              className="mt-4 w-full cursor-pointer bg-yellow-500 text-black font-semibold p-2 rounded hover:bg-yellow-400"
-            >
-              {isLogin ? "Login" : "Register"}
-            </motion.button>
-            <div className="mt-4 text-sm">
-              {isLogin ? (
-                <p>
-                  Don&apos;t have an account?{" "}
-                  <span
-                    className="text-blue-400 cursor-pointer"
-                    onClick={() => {
-                      setIsLogin(false)
-                    }}
-                  >
-                    Register here
-                  </span>
-                </p>
-              ) : (
-                <p>
-                  Already have an account?{" "}
-                  <span
-                    className="text-blue-400 cursor-pointer"
-                    onClick={() => {
-                      setIsLogin(true)
-                    }}
-                  >
-                    Login here
-                  </span>
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        {loading && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="text-white text-lg animate-pulse">Processing...</div>
-          </div>
-        )}
-        <div className="mt-14 flex space-x-4">
-          <img
-            src="https://t4.ftcdn.net/jpg/04/42/21/53/360_F_442215355_AjiR6ogucq3vPzjFAAEfwbPXYGqYVAap.jpg"
-            width={170}
-            height={150}
-            alt="JetX"
-          />
-          <img
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXn8BNx6JAauM_mcWo9Ykmg9YRdglXdnXK-g&s"
-            width={170}
-            height={150}
-            alt="Game"
-          />
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute inset-0 overflow-hidden z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('/bg-pattern.png')] opacity-10"></div>
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
+        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
       </div>
 
+      <motion.div
+        className="relative z-10 w-full max-w-md flex flex-col items-center"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <motion.div variants={itemVariants} className="mb-8">
+          <img className="w-48 h-auto" src="/LOGO CRASH-02.png" alt="Logo" />
+        </motion.div>
+
+        {firebaseError && (
+          <motion.div
+            variants={itemVariants}
+            className="w-full max-w-sm mb-4 bg-red-900/50 border border-red-700 rounded-lg p-4 text-white"
+          >
+            <p className="font-medium">Firebase Error</p>
+            <p className="text-sm">{firebaseError}</p>
+          </motion.div>
+        )}
+
+        <motion.div
+          variants={itemVariants}
+          className="w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden"
+        >
+          {/* Tab navigation */}
+          <div className="flex">
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${
+                isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
+              }`}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${
+                !isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
+              }`}
+            >
+              Register
+            </button>
+          </div>
+
+          {/* Form content */}
+          <div className="p-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={isLogin ? "login" : "register"}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <h2 className="text-xl font-bold text-center mb-6">{isLogin ? "Welcome Back" : "Create Account"}</h2>
+
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <label htmlFor="username" className="text-sm font-medium text-gray-300">
+                      Username
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <FaUser />
+                      </div>
+                      <input
+                        id="username"
+                        type="text"
+                        placeholder="Enter your username"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full p-3 pl-10 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label htmlFor="phone" className="text-sm font-medium text-gray-300">
+                    WhatsApp Number
+                  </label>
+                  <div className="relative flex">
+                    <div className="flex items-center justify-center px-3 bg-gray-700 border border-gray-600 rounded-l-lg">
+                      <FaWhatsapp className="text-green-500 mr-1" />
+                      <span className="text-white">+977</span>
+                    </div>
+                    <input
+                      id="phone"
+                      type="tel"
+                      placeholder="9XXXXXXXX"
+                      required
+                      value={phone}
+                      onChange={(e) => {
+                        // Only allow digits
+                        const value = e.target.value.replace(/\D/g, "")
+                        setPhone(value)
+                      }}
+                      maxLength={10}
+                      className="w-full p-3 rounded-r-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">Enter your 10-digit WhatsApp number without country code</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium text-gray-300">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                      <PiLockKey />
+                    </div>
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full p-3 pl-10 pr-10 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+                    </button>
+                  </div>
+                  {!isLogin && <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>}
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={isLogin ? handleLogin : handleRegister}
+                  disabled={loading || !firebaseInitialized}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition-all ${
+                    loading || !firebaseInitialized ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      {isLogin ? "Logging in..." : "Registering..."}
+                    </div>
+                  ) : (
+                    <>{isLogin ? "Login" : "Register"}</>
+                  )}
+                </motion.button>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Game images */}
+        <motion.div variants={itemVariants} className="mt-10 grid grid-cols-2 gap-4 w-full max-w-sm">
+          <div className="overflow-hidden rounded-xl shadow-lg">
+            <img
+              src="https://t4.ftcdn.net/jpg/04/42/21/53/360_F_442215355_AjiR6ogucq3vPzjFAAEfwbPXYGqYVAap.jpg"
+              alt="JetX"
+              className="w-full h-auto object-cover transform hover:scale-110 transition-transform duration-500"
+            />
+          </div>
+          <div className="overflow-hidden rounded-xl shadow-lg">
+            <img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXn8BNx6JAauM_mcWo9Ykmg9YRdglXdnXK-g&s"
+              alt="Game"
+              className="w-full h-auto object-cover transform hover:scale-110 transition-transform duration-500"
+            />
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Loading overlay */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm z-50"
+          >
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col items-center">
+              <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p className="text-white text-lg">{isLogin ? "Logging in..." : "Creating account..."}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Popups */}
       <AnimatePresence>{showPopup && <UopupRegisterSuccess setShowPopup={setShowPopup} />}</AnimatePresence>
+
       <AnimatePresence>
         {accAtive && <AccountInactiveLogin setAccAtive={setAccAtive} userData={inactiveUserData} />}
       </AnimatePresence>

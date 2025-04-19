@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import {
   collection,
@@ -26,6 +24,29 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  ChevronLeft,
+  ChevronRight,
+  RefreshCcw,
+  Trash2,
+  AlertTriangle,
+  Clock,
+  ArrowUp,
+  ArrowDown,
+  AlertCircle,
+  Loader2,
+} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 type CrashRecord = {
   id: string
@@ -60,6 +81,9 @@ export function GameHistory() {
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false)
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  // Animation states
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     async function fetchCrashes() {
@@ -133,6 +157,7 @@ export function GameHistory() {
         setError("Failed to load crash history")
       } finally {
         setLoading(false)
+        setIsRefreshing(false)
       }
     }
 
@@ -162,6 +187,7 @@ export function GameHistory() {
   }
 
   function handleManualRefresh() {
+    setIsRefreshing(true)
     setRefreshTrigger((prev) => prev + 1)
   }
 
@@ -185,8 +211,8 @@ export function GameHistory() {
     setCurrentPage(1)
   }
 
-  function handlePageSizeChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const newSize = Number.parseInt(e.target.value, 10)
+  function handlePageSizeChange(value: string) {
+    const newSize = Number.parseInt(value, 10)
     setCurrentPage(1) // Reset to first page when changing page size
     setLastVisible(null) // Reset pagination cursors
     setFirstVisible(null)
@@ -261,210 +287,298 @@ export function GameHistory() {
     }
   }
 
+  const tableVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+      },
+    },
+  }
+
+  const tableRowVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3 },
+    },
+    exit: {
+      opacity: 0,
+      x: -20,
+      transition: { duration: 0.2 },
+    },
+  }
+
   return (
-    <div className="w-full rounded-lg p-2">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="md:text-2xl text-sm font-bold text-gray-700">Recent Crash History</h2>
-        <button
-          onClick={handleManualRefresh}
-          className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-md md:text-sm text-xs flex items-center"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 mr-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <div className="w-full bg-white rounded-xl shadow-sm border border-slate-100 p-6 hover:shadow-md transition-shadow">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-800 flex items-center">
+            <Clock className="mr-2 h-5 w-5 text-blue-500" />
+            Game History
+            <Badge variant="outline" className="ml-3 bg-blue-50 text-blue-600 border-blue-200">
+              {crashes.length > 0
+                ? `${(currentPage - 1) * pageSize + 1}-${(currentPage - 1) * pageSize + crashes.length} of many`
+                : "0 records"}
+            </Badge>
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">View and manage your game crash history</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <motion.button
+            onClick={handleManualRefresh}
+            className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors duration-200"
+            whileTap={{ scale: 0.97 }}
+            animate={isRefreshing ? { rotate: 360 } : { rotate: 0 }}
+            transition={isRefreshing ? { repeat: Number.POSITIVE_INFINITY, duration: 1, ease: "linear" } : {}}
+            disabled={isRefreshing}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          Refresh
-        </button>
+            <RefreshCcw className="h-4 w-4 mr-1.5" />
+            {isRefreshing ? "Refreshing..." : "Refresh"}
+          </motion.button>
+
+          <motion.button
+            onClick={() => setDeleteAllDialogOpen(true)}
+            className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-colors duration-200"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            disabled={crashes.length === 0}
+          >
+            <Trash2 className="h-4 w-4 mr-1.5" />
+            Delete All
+          </motion.button>
+        </div>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <select
-          value={pageSize.toString()}
-          onChange={handlePageSizeChange}
-          className="w-[120px] rounded border bg-gray-400 border-gray-300 px-3 py-2 text-xs"
-        >
-          <option value="5">5 per page</option>
-          <option value="10">10 per page</option>
-          <option value="20">20 per page</option>
-          <option value="50">50 per page</option>
-        </select>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+        <div className="mb-4 sm:mb-0">
+          <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+            <SelectTrigger className="w-[180px] h-9 text-sm bg-white border-slate-200">
+              <SelectValue placeholder="Records per page" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Records per page</SelectLabel>
+                <SelectItem value="5">5 per page</SelectItem>
+                <SelectItem value="10">10 per page</SelectItem>
+                <SelectItem value="20">20 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <button
-          onClick={() => setDeleteAllDialogOpen(true)}
-          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md md:text-sm text-xs flex items-center"
-          disabled={crashes.length === 0}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 mr-1"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrevPage}
+            disabled={!hasPrevPage}
+            className={`h-9 px-3 border-slate-200 ${!hasPrevPage && "opacity-50"}`}
           >
-            <path d="M3 6h18" />
-            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-          </svg>
-          Delete All
-        </button>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+
+          <div className="flex items-center justify-center h-9 min-w-[2.5rem] px-2 rounded bg-blue-50 text-blue-600 font-medium text-sm">
+            {currentPage}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={!hasNextPage}
+            className={`h-9 px-3 border-slate-200 ${!hasNextPage && "opacity-50"}`}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-700">Loading crash history...</p>
+        <div className="flex flex-col items-center justify-center py-16 bg-slate-50 rounded-lg border border-slate-100">
+          <Loader2 className="h-10 w-10 text-blue-500 animate-spin mb-4" />
+          <p className="text-slate-600 font-medium">Loading crash history...</p>
+          <p className="text-slate-500 text-sm mt-1">Please wait while we fetch the data</p>
         </div>
       ) : error ? (
-        <div className="bg-red-900 bg-opacity-20 border border-red-800 p-4 rounded-lg text-center">
-          <p className="text-red-400">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+          <p className="text-red-600 font-medium">{error}</p>
+          <p className="text-red-500 text-sm mt-1">Please try refreshing the page</p>
+          <Button
+            variant="outline"
+            className="mt-4 border-red-200 text-red-600 hover:bg-red-50"
+            onClick={handleManualRefresh}
+          >
+            <RefreshCcw className="h-4 w-4 mr-1.5" />
+            Try Again
+          </Button>
         </div>
       ) : (
-        <div className="overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-slate-200">
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="text-sm uppercase bg-blue-600/50 text-gray-800">
-                <tr>
-                  <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3">Crash Point</th>
-                  <th className="px-4 py-3">Bet Amount</th>
-                  <th className="px-4 py-3">Target</th>
-                  <th className="px-4 py-3">Win Rate</th>
-                  <th className="px-4 py-3">EV</th>
-                  <th className="px-4 py-3">Result</th>
-                  <th className="px-4 py-3">Actions</th>
+            <motion.table
+              className="w-full border-collapse"
+              variants={tableVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Time
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Crash Point
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Bet Amount
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Target
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Win Rate
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    EV
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Result
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {crashes.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                      No crash data available yet
+                    <td colSpan={8} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <AlertTriangle className="h-8 w-8 text-amber-400 mb-2" />
+                        <p className="text-slate-600 font-medium">No crash data available yet</p>
+                        <p className="text-slate-500 text-sm mt-1">Game records will appear here when available</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  crashes.map((crash) => (
-                    <tr key={crash.id} className="border-b text-sm text-gray-700 border-gray-800 hover:bg-gray-100">
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{formatDate(crash.timestamp)}</td>
-                      <td className="px-4 py-3 font-medium text-red-500">{crash.crashPoint?.toFixed(2)}x</td>
-                      <td className="px-4 py-3">{crash.betAmount?.toFixed(2)}</td>
-                      <td className="px-4 py-3">{crash.cashoutMultiplier?.toFixed(2)}x</td>
-                      <td className="px-4 py-3 text-green-500">{crash.winRate?.toFixed(2)}%</td>
-                      <td className={`px-4 py-3 ${crash.expectedValue >= 0 ? "text-green-500" : "text-red-500"}`}>
-                        {crash.expectedValue >= 0 ? "+" : ""}
-                        {crash.expectedValue?.toFixed(2)}
-                      </td>
-                      <td
-                        className={`px-4 py-3 ${crash.profit !== null && crash.profit >= 0 ? "text-green-500" : "text-red-500"}`}
+                  <AnimatePresence>
+                    {crashes.map((crash, index) => (
+                      <motion.tr
+                        key={crash.id}
+                        className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                        variants={tableRowVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        layout
                       >
-                        {crash.userCashedOut
-                          ? crash.profit !== null
-                            ? `+${crash.profit.toFixed(2)}`
-                            : "Cashed Out"
-                          : "Crashed"}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => {
-                            setRecordToDelete(crash.id)
-                            setDeleteDialogOpen(true)
-                          }}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                        <td className="px-4 py-4">
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 text-slate-400 mr-2" />
+                            <span className="text-sm text-slate-600">{formatDate(crash.timestamp)}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-medium text-red-600">{crash.crashPoint?.toFixed(2)}x</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-slate-700">{crash.betAmount?.toFixed(2)}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-slate-700">{crash.cashoutMultiplier?.toFixed(2)}x</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-medium text-emerald-600 flex items-center">
+                            {crash.winRate?.toFixed(2)}%
+                            {crash.winRate > 50 && <ArrowUp className="h-3 w-3 ml-1 text-emerald-500" />}
+                            {crash.winRate < 50 && <ArrowDown className="h-3 w-3 ml-1 text-red-500" />}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div
+                            className={`text-sm font-medium flex items-center ${crash.expectedValue >= 0 ? "text-emerald-600" : "text-red-600"}`}
                           >
-                            <path d="M3 6h18" />
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                            {crash.expectedValue >= 0 ? "+" : ""}
+                            {crash.expectedValue?.toFixed(2)}
+                            {crash.expectedValue > 0 && <ArrowUp className="h-3 w-3 ml-1" />}
+                            {crash.expectedValue < 0 && <ArrowDown className="h-3 w-3 ml-1" />}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          {crash.userCashedOut ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-50 hover:bg-emerald-50 text-emerald-700 border-emerald-200"
+                            >
+                              {crash.profit !== null ? `+${crash.profit.toFixed(2)}` : "Cashed Out"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-red-50 hover:bg-red-50 text-red-700 border-red-200">
+                              Crashed
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <motion.button
+                            whileHover={{ scale: 1.15 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              setRecordToDelete(crash.id)
+                              setDeleteDialogOpen(true)
+                            }}
+                            className="text-red-400 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 )}
               </tbody>
-            </table>
+            </motion.table>
           </div>
 
-          {/* Pagination Controls */}
-          <div className="flex justify-end items-center mt-4 px-4">
-            <div className="flex space-x-2 items-center">
-              <button
-                onClick={handlePrevPage}
-                disabled={!hasPrevPage}
-                className={`px-3 py-1 rounded-md text-sm ${
-                  !hasPrevPage
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                Previous
-              </button>
-              <div className="text-sm text-gray-600 px-2 py-1 bg-slate-300 rounded">{currentPage}</div>
-
-              <button
-                onClick={handleNextPage}
-                disabled={!hasNextPage}
-                className={`px-3 py-1 rounded-md text-sm ${
-                  !hasNextPage
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                Next
-              </button>
+          {/* Pagination info */}
+          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 text-sm text-slate-500 flex items-center justify-between">
+            <div>
+              {crashes.length > 0 && (
+                <>
+                  Showing records {(currentPage - 1) * pageSize + 1} to {(currentPage - 1) * pageSize + crashes.length}
+                </>
+              )}
             </div>
+            <div className="text-slate-400">Updated {new Date().toLocaleTimeString()}</div>
           </div>
         </div>
       )}
 
       {/* Delete Single Record Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-red-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
+            <DialogTitle className="flex items-center text-red-600 gap-2">
+              <AlertCircle className="h-5 w-5" />
               Confirm Deletion
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this record? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <div className="p-4 bg-red-50 border border-red-100 rounded-lg my-2">
+            <p className="text-sm text-slate-700">
+              Deleting this record will permanently remove it from your history. All associated data will be lost.
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-between">
             <Button
               variant="outline"
               onClick={() => {
@@ -475,14 +589,17 @@ export function GameHistory() {
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteRecord} disabled={deleteLoading}>
+            <Button variant="destructive" onClick={handleDeleteRecord} disabled={deleteLoading} className="gap-1">
               {deleteLoading ? (
                 <>
-                  <span className="animate-spin mr-2">⟳</span>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (
-                "Delete"
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Record
+                </>
               )}
             </Button>
           </DialogFooter>
@@ -491,42 +608,38 @@ export function GameHistory() {
 
       {/* Delete All Records Confirmation Dialog */}
       <Dialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-red-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-              Confirm Delete All
+            <DialogTitle className="flex items-center text-red-600 gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Confirm Delete All Records
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete ALL crash history records? This action cannot be undone and will remove
-              all data.
+              Are you sure you want to delete ALL crash history records? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <div className="p-4 bg-red-50 border border-red-100 rounded-lg my-2">
+            <p className="text-sm font-medium text-red-700 mb-2">Warning: High Impact Action</p>
+            <p className="text-sm text-slate-700">
+              This will permanently delete all crash history records from the database. You will lose all historical
+              data and analytics.
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-between">
             <Button variant="outline" onClick={() => setDeleteAllDialogOpen(false)} disabled={deleteLoading}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteAllRecords} disabled={deleteLoading}>
+            <Button variant="destructive" onClick={handleDeleteAllRecords} disabled={deleteLoading} className="gap-1">
               {deleteLoading ? (
                 <>
-                  <span className="animate-spin mr-2">⟳</span>
-                  Deleting...
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Deleting All Records...
                 </>
               ) : (
-                "Delete All Records"
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete All Records
+                </>
               )}
             </Button>
           </DialogFooter>
