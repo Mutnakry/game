@@ -123,7 +123,7 @@ export default function SingleWhatAppForm() {
       }
 
       // Save to Firebase
-      await setDoc(doc(db, "what-app", SINGLE_WHAT_APP_ID), {
+      await setDoc(doc(db, "what-app1", SINGLE_WHAT_APP_ID), {
         whatapp: updatedEntry.whatapp,
         phoneLink: updatedEntry.phoneLink,
         message: updatedEntry.message,
