@@ -189,8 +189,7 @@ export default function LoginPage() {
             email: generatedEmail,
             username: userData.username || "",
             phone: userData.phone || "",
-            message:
-              "Your account is inactive. Please contact our customer service via WhatsApp to activate your account. You may need to complete a top-up to activate your account.",
+           
           })
         }
       } else {
@@ -329,7 +328,8 @@ export default function LoginPage() {
       // Create user with generated email and password
       const userCredential = await createUserWithEmailAndPassword(auth, generatedEmail, password)
       console.log("User created in Auth:", userCredential.user.uid)
-
+      localStorage.setItem("username", username)
+      localStorage.setItem("userPhone", formattedPhone)
       // Store user data in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         username,
@@ -339,12 +339,12 @@ export default function LoginPage() {
         createdAt: new Date().toISOString(),
       })
 
-      console.log("User data stored in Firestore")
+      // console.log("User data stored in Firestore")
 
       // Sign out after registration (user needs to be activated)
       await auth.signOut()
 
-      setShowPopup(true)
+      setAccAtive(true)
     } catch (error: any) {
       console.error("Registration error:", error)
 
@@ -372,6 +372,12 @@ export default function LoginPage() {
     }
   }
 
+  const cleardata =()=>{
+    setPhone("")
+    setUsername("")
+    setPassword("")
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
       {/* Background elements */}
@@ -388,7 +394,7 @@ export default function LoginPage() {
         variants={containerVariants}
       >
         <motion.div variants={itemVariants} className="mb-8">
-          <img className="w-48 h-auto" src="/LOGO CRASH-02.png" alt="Logo" />
+          <img  src="/LOGO CRASH-02.png" alt="Logo" />
         </motion.div>
 
         {firebaseError && (
@@ -406,20 +412,18 @@ export default function LoginPage() {
           className="w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden"
         >
           {/* Tab navigation */}
-          <div className="flex">
+          <div className="flex" onClick={cleardata}>
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-4 text-center font-medium transition-colors ${
-                isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
-              }`}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
+                }`}
             >
               Login
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-4 text-center font-medium transition-colors ${
-                !isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
-              }`}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${!isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
+                }`}
             >
               Register
             </button>
@@ -521,9 +525,8 @@ export default function LoginPage() {
                   whileTap={{ scale: 0.97 }}
                   onClick={isLogin ? handleLogin : handleRegister}
                   disabled={loading || !firebaseInitialized}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition-all ${
-                    loading || !firebaseInitialized ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition-all ${loading || !firebaseInitialized ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
                 >
                   {loading ? (
                     <div className="flex items-center justify-center">

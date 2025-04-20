@@ -16,6 +16,16 @@ interface UserData {
   message?: string
 }
 
+interface WhatAppEntry {
+  id: string
+  whatapp: string       // Phone number, e.g., "9700447095"
+  phoneLink?: string    // Optional pre-built WhatsApp URL
+  message?: string      // Optional custom message
+  createdAt: string
+  updatedAt: string
+}
+
+
 interface AccountInactiveProps {
   setAccAtive: React.Dispatch<React.SetStateAction<boolean>>
   userData: UserData | null
@@ -33,6 +43,15 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
   const [loadingState, setLoadingState] = useState<"loading" | "success" | "error">("loading")
   const [retryCount, setRetryCount] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [userMessage, setUserMessage] = useState<string>("")
+
+  const [username, setUsername] = useState("")
+  const [userPhone, setUserPhone] = useState("")
+
+  useEffect(() => {
+    setUsername(localStorage.getItem("username") || "")
+    setUserPhone(localStorage.getItem("userPhone") || "")
+  }, [])
 
   // Fetch WhatsApp configuration from Firebase
   useEffect(() => {
@@ -46,53 +65,22 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
       setLoadingState("loading")
 
       try {
-        // Try both collections to be safe
-        let docSnap = null
-        let data = null
+        const docRef = doc(db, "what-app1", WHAT_APP_CONFIG_ID)
+        const docSnap = await getDoc(docRef)
 
-        try {
-          // First try "what-app"
-          const docRef = doc(db, "what-app", WHAT_APP_CONFIG_ID)
-          docSnap = await getDoc(docRef)
+        if (docSnap.exists()) {
+          const data = docSnap.data()
 
-          if (docSnap.exists()) {
-            data = docSnap.data()
-          } else {
-            // If not found, try "what-app1"
-            const docRef1 = doc(db, "what-app1", WHAT_APP_CONFIG_ID)
-            docSnap = await getDoc(docRef1)
-
-            if (docSnap.exists()) {
-              data = docSnap.data()
-            }
-          }
-        } catch (innerError) {
-          console.error("Error in primary fetch:", innerError)
-          // Try the fallback collection
-          const docRef1 = doc(db, "what-app1", WHAT_APP_CONFIG_ID)
-          docSnap = await getDoc(docRef1)
-
-          if (docSnap.exists()) {
-            data = docSnap.data()
-          }
-        }
-
-        if (data) {
-          // Set the WhatsApp number from Firebase
           setWhatsappNumber(data.whatapp || "9700447095")
-
-          // Set the WhatsApp link if available
-          if (data.phoneLink) {
-            setWhatsappLink(data.phoneLink)
-          }
-
+          setWhatsappLink(data.phoneLink || "")
+          setUserMessage(data.message || "") // Add this line if you're displaying a message
           setLoadingState("success")
         } else {
-          console.warn("No WhatsApp configuration found in Firebase")
+          console.warn("No WhatsApp config found")
           setLoadingState("error")
         }
       } catch (error) {
-        console.error("Error fetching WhatsApp configuration:", error)
+        console.error("Error fetching WhatsApp config:", error)
         setLoadingState("error")
 
         toast({
@@ -107,6 +95,7 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
 
     fetchWhatsAppConfig()
   }, [toast, retryCount])
+
 
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as HTMLElement
@@ -237,8 +226,13 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
             <h3 className="text-xl font-semibold mb-3 font-KhmerMoul text-gray-800">Account Inactive</h3>
             <div className="w-16 h-1 bg-gradient-to-r from-green-400 to-yellow-400 mx-auto mb-4 rounded-full"></div>
             <p className="mb-5 text-gray-600">
-              {userData?.message || "Please contact our customer service to activate your account!"}
+              {userData?.message || userMessage || "Please contact support to activate your account."}
             </p>
+
+
+            <div>
+              <span className="text-gray-800">Customer service : {whatsappNumber}</span>
+            </div>
           </motion.div>
 
           <motion.div
@@ -249,20 +243,23 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
               <div className="space-y-2">
                 <p className="flex items-center">
                   <span className="font-medium text-gray-700 w-20">Username:</span>
-                  <span className="text-gray-800">{userData?.username}</span>
+                  <span className="text-gray-800">{userData?.username || username }</span>
+                  <br />
+
                 </p>
                 <p className="flex items-center">
                   <span className="font-medium text-gray-700 w-20">What App:</span>
-                  <span className="text-gray-800">{whatsappNumber}</span>
+                  <span className="text-gray-800">{userData?.phone || userPhone}</span>
                 </p>
               </div>
+
               <motion.button
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
                 initial="initial"
                 className={`text-xl p-2 rounded-full ${copied ? "bg-green-100 text-green-600" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"}`}
-                onClick={() => copyToClipboard(`Username: ${userData?.username || ""}\nWhatsApp: ${whatsappNumber}`)}
+                onClick={() => copyToClipboard(`Username: ${userData?.username || ""}\nWhatsApp: ${userData?.phone}`)}
                 aria-label="Copy account information"
               >
                 <FaCopy />
@@ -335,7 +332,7 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
                 <FaWhatsapp className="text-xl" />
                 Contact via WhatsApp
               </motion.button>
-              
+
             )}
 
             <motion.button
