@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { LogOut, Flame, Trophy, Bell } from 'lucide-react'
+import { LogOut } from "lucide-react"
 import useAutoLogout from "@/components/auth/useAutoLogout"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
@@ -59,12 +59,11 @@ export default function HomePage() {
         <header className="mb-12 relative">
           {/* Top navigation bar */}
           <div className="flex justify-between items-center mb-8">
-           
             {/* Main Logo - Centered */}
             <div className="absolute left-1/2 transform -translate-x-1/2">
-              <motion.img 
-                src="/LOGO CRASH-02.png" 
-                alt="CRASH977 Logo" 
+              <motion.img
+                src="/LOGO CRASH-02.png"
+                alt="CRASH977 Logo"
                 className="h-16 object-contain"
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -74,7 +73,6 @@ export default function HomePage() {
 
             {/* Right side controls */}
             <div className="flex items-center space-x-2">
-            
               <Button
                 onClick={handleLogout}
                 variant="outline"
@@ -86,41 +84,37 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-
-          
         </header>
 
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 gap-6 max-w-md mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          
           {/* Game Cards */}
           <div className="space-y-6">
-            <GameCard 
-              title="CRASH977" 
-              imageSrc="/crash.png" 
-              href="/crash-game" 
+            <GameCard
+              title="Aviator"
+              imageSrc="/crash.png"
+              href="/crash-game"
               description="Multiplayer crash game"
               delay={0.1}
             />
 
-            <GameCard 
-              title="JetX" 
-              imageSrc="/jetx.png" 
-              href="/crash-game" 
+            <GameCard
+              title="JetX"
+              imageSrc="/jetxmain.webp"
+              href="/jetx-game"
               description="Space adventure game"
               delay={0.2}
             />
 
-            <GameCard 
-              title="Space Man" 
-              imageSrc="/spine.png" 
-              href="/crash-game" 
+            <GameCard
+              title="Space Man"
+              imageSrc="/spaceman.webp"
+              href="/spaceman-game"
               description="Cosmic exploration game"
-              multiplier="10.5x"
               delay={0.3}
             />
           </div>
@@ -158,35 +152,45 @@ function GameCard({ title, imageSrc, href, description, multiplier, delay = 0 }:
               src={imageSrc || "/placeholder.svg"}
               alt={title}
               fill
-              className="object object-contain"
+              className="object-contain"
               priority={title === "CRASH977"}
             />
           </div>
-          
+
           <div className="p-4 flex-1">
             <h2 className="text-xl font-bold mb-1">{title}</h2>
             {description && <p className="text-sm text-gray-400">{description}</p>}
-            
+
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                 <span className="text-xs text-green-500">Live</span>
               </div>
-              
+
               {multiplier && (
-                <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold">
-                  {multiplier}
-                </div>
+                <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold">{multiplier}</div>
               )}
             </div>
           </div>
-          
+
           <div className="pr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><path d="m9 18 6-6-6-6"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-gray-400"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
           </div>
         </div>
       </Link>
     </motion.div>
   )
 }
-
