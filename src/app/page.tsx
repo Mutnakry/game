@@ -14,7 +14,7 @@ export default function Home() {
       if (!storedToken) {
         router.push("/login"); // Redirect to login
       } else {
-        router.push("/crash-game"); // Redirect to dashboard
+        router.push("/home"); // Redirect to dashboard
       }
       setLoading(false);
     }, 1000); 

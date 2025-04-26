@@ -44,9 +44,9 @@ const Page = () => {
       <RandDomMultiplire />
     </div>,
     // Presets
-    <div key="presets">
-      <AddNewPresets />
-    </div>,
+    // <div key="presets">
+    //   <AddNewPresets />
+    // </div>,
     // What App
     <div key="whatapp">
       <FormWhatApp />

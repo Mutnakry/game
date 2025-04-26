@@ -177,7 +177,7 @@ export default function LoginPage() {
             variant: "success",
           })
 
-          router.push("/crash-game")
+          router.push("/home")
         } else {
           await auth.signOut()
           localStorage.removeItem("token")
