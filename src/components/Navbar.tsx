@@ -71,14 +71,14 @@ export function CuteNavbar({
             lightColor: "bg-blue-50",
             hoverGradient: "from-blue-400 to-blue-500",
         },
-        {
-            name: "Presets",
-            icon: PiWhatsappLogoThin,
-            color: "text-green-500",
-            gradient: "from-green-400/80 to-green-500/80",
-            lightColor: "bg-green-50",
-            hoverGradient: "from-green-400 to-green-500",
-        },
+        // {
+        //     name: "Presets",
+        //     icon: PiWhatsappLogoThin,
+        //     color: "text-green-500",
+        //     gradient: "from-green-400/80 to-green-500/80",
+        //     lightColor: "bg-green-50",
+        //     hoverGradient: "from-green-400 to-green-500",
+        // },
         {
             name: "What App",
             icon: FaWhatsapp,
