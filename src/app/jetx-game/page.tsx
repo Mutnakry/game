@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic"
 import { Suspense } from "react"
 
-// Dynamically import the MiniCrash component to avoid SSR issues with canvas
-const MiniCrash = dynamic(() => import("@/components/games/mini-crash"), {
+// Dynamically import the JetX component to avoid SSR issues with canvas
+const JetX = dynamic(() => import("@/components/games/jetx"), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-screen bg-black text-white">
@@ -16,10 +16,10 @@ const MiniCrash = dynamic(() => import("@/components/games/mini-crash"), {
   ),
 })
 
-export default function CrashGamePage() {
+export default function JetXGamePage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <MiniCrash />
+      <JetX />
     </Suspense>
   )
 }
