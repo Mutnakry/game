@@ -41,7 +41,7 @@ export function GameControls({
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             />
-            Saving...
+           बचत...
           </span>
         ) : (
           <>

@@ -32,7 +32,7 @@ export function GameControls({
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             />
-            Loading...
+            बचत...
           </span>
         ) : isSavingCrash ? (
           <span className="flex items-center justify-center">
@@ -41,7 +41,7 @@ export function GameControls({
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             />
-            Saving...
+            बचत...
           </span>
         ) : (
           <>
@@ -52,7 +52,7 @@ export function GameControls({
               }}
               transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatType: "loop" }}
             />
-            LAUNCH
+           सुरुवात
           </>
         )}
       </Button>
