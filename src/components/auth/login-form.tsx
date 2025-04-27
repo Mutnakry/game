@@ -118,8 +118,8 @@ export default function LoginPage() {
     if (!phone || !password) {
       toast({
         variant: "destructive",
-        title: "Login Error",
-        description: "Please enter your phone number and password",
+        title: "लगइन त्रुटि",
+        description: "कृपया आफ्नो फोन नम्बर र पासवर्ड राख्नुहोस",
       })
       return
     }
@@ -128,7 +128,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Invalid Phone Number",
-        description: "Please enter a valid 9 or 10-digit phone number",
+        description: "कृपया मान्य ९ वा १०-अङ्कको फोन नम्बर राख्नुहोस्",
       })
       return
     }
@@ -172,7 +172,7 @@ export default function LoginPage() {
           localStorage.setItem("userPhone", userData.phone || "")
 
           toast({
-            title: "Login Successful",
+            title: "लगइन सफल भयो",
             description: "Welcome back!",
             variant: "success",
           })
@@ -216,13 +216,13 @@ export default function LoginPage() {
           email: generatedEmail,
           username: phone,
           phone: formattedPhone,
-          message: "Your account needs to be activated. Please contact our customer service via WhatsApp.",
+          message: "तपाईंको खाता सक्रिय गर्न आवश्यक छ। कृपया हाम्रो ग्राहक सेवासँग WhatsApp मार्फत सम्पर्क गर्नुहोस्",
         })
       }
     } catch (error: any) {
-      console.error("Login error:", error)
+      console.error("लगइन असफल भयो", error)
 
-      let errorMessage = "Login failed. Please check your phone number and password."
+      let errorMessage = "कृपया आफ्नो फोन नम्बर र पासवर्ड जाँच गर्नुहोस्."
 
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         errorMessage = "Invalid phone number or password"
@@ -263,7 +263,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: "Authentication service is not available. Please try again later.",
+        description: "जडान गर्न सकिएन। यो फोन नम्बर हाम्रो प्रणालीमा पहिले नै दर्ता गरिएको छ",
       })
       return
     }
@@ -271,8 +271,8 @@ export default function LoginPage() {
     if (!password || !username || !phone) {
       toast({
         variant: "destructive",
-        title: "Validation Error",
-        description: "Please fill in all fields",
+        title: "प्रमाणीकरण त्रुटि",
+        description: "कृपया सबै क्षेत्रहरू भर्नुहोस्",
       })
       return
     }
@@ -280,8 +280,8 @@ export default function LoginPage() {
     if (!validatePhone(phone)) {
       toast({
         variant: "destructive",
-        title: "Invalid Phone Number",
-        description: "Please enter a valid 9 or 10-digit phone number",
+        title: "अमान्य फोन नम्बर",
+        description: "कृपया मान्य ९ वा १०-अङ्कको फोन नम्बर राख्नुहोस्",
       })
       return
     }
@@ -290,7 +290,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Password Error",
-        description: "Password must be at least 6 characters long",
+        description: "पासवर्ड धेरै कमजोर छ। कृपया कम्तिमा ६ वर्ण प्रयोग गर्नुहोस्",
       })
       return
     }
@@ -316,7 +316,7 @@ export default function LoginPage() {
           email: userData.email || generateEmailFromPhone(formattedPhone),
           username: userData.username || "",
           phone: formattedPhone,
-          message: "Cannot connect to consumer. This phone number is already registered in our system.",
+          message: "उपभोक्तासँग जडान गर्न सकिएन। यो फोन नम्बर हाम्रो प्रणालीमा पहिले नै दर्ता गरिएको छ",
         })
         setLoading(false)
         return
@@ -346,25 +346,25 @@ export default function LoginPage() {
 
       setAccAtive(true)
     } catch (error: any) {
-      console.error("Registration error:", error)
+      console.error("दर्ता त्रुटि:", error)
 
-      let errorMessage = "Registration failed"
+      let errorMessage = "दर्ता त्रुटि"
 
       if (error.code === "auth/email-already-in-use") {
-        errorMessage = "This phone number is already registered"
+        errorMessage = "यो फोन नम्बर पहिले नै दर्ता गरिएको छ"
       } else if (error.code === "auth/weak-password") {
-        errorMessage = "Password is too weak. Please use at least 6 characters."
+        errorMessage = "पासवर्ड धेरै कमजोर छ। कृपया कम्तिमा ६ वर्ण प्रयोग गर्नुहोस्"
       } else if (error.code === "auth/network-request-failed") {
-        errorMessage = "Network error. Please check your internet connection."
+        errorMessage = " नेटवर्क त्रुटि। कृपया आफ्नो इन्टरनेट जडान जाँच गर्नुहोस्"
       } else if (error.code) {
-        errorMessage = `Registration error: ${error.code}`
+        errorMessage = `दर्ता त्रुटि: ${error.code}`
       } else if (error.message) {
         errorMessage = error.message
       }
 
       toast({
         variant: "destructive",
-        title: "Registration Failed",
+        title: "दर्ता असफल भयो",
         description: errorMessage,
       })
     } finally {
@@ -418,14 +418,14 @@ export default function LoginPage() {
               className={`flex-1 py-4 text-center font-medium transition-colors ${isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
                 }`}
             >
-              Login
+              दर्ता गर्नुहोस्
             </button>
             <button
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-4 text-center font-medium transition-colors ${!isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
                 }`}
             >
-              Register
+              खाता खोल्नुहोस
             </button>
           </div>
 
@@ -440,12 +440,12 @@ export default function LoginPage() {
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-bold text-center mb-6">{isLogin ? "Welcome Back" : "Create Account"}</h2>
+                <h2 className="text-xl font-bold text-center mb-6">{isLogin ? "स्वागत छ" : "प्रयोगकर्ता नाम"}</h2>
 
                 {!isLogin && (
                   <div className="space-y-2">
                     <label htmlFor="username" className="text-sm font-medium text-gray-300">
-                      Username
+                    आफ्नो प्रयोगकर्ता नाम लेख्नुहोस
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -454,7 +454,7 @@ export default function LoginPage() {
                       <input
                         id="username"
                         type="text"
-                        placeholder="Enter your username"
+                        placeholder="आफ्नो प्रयोगकर्ता नाम लेख्नुहोस"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -466,7 +466,7 @@ export default function LoginPage() {
 
                 <div className="space-y-2">
                   <label htmlFor="phone" className="text-sm font-medium text-gray-300">
-                    WhatsApp Number
+                  WhatApps नम्बर
                   </label>
                   <div className="relative flex">
                     <div className="flex items-center justify-center px-3 bg-gray-700 border border-gray-600 rounded-l-lg">
@@ -488,12 +488,12 @@ export default function LoginPage() {
                       className="w-full p-3 rounded-r-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">Enter your 10-digit WhatsApp number without country code</p>
+                  <p className="text-xs text-gray-500">देश कोड बिना आफ्नो १०-अङ्कको WhatApps नम्बर राख्नुहो</p>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-gray-300">
-                    Password
+                  पासवर्ड राख्नुहोस
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -502,7 +502,7 @@ export default function LoginPage() {
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder=" पासवर्ड राख्नुहोस"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -517,7 +517,7 @@ export default function LoginPage() {
                       {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                     </button>
                   </div>
-                  {!isLogin && <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>}
+                  {!isLogin && <p className="text-xs text-gray-500">पासवर्ड कम्तिमा ६ वर्ण लामो हुनुपर्छ</p>}
                 </div>
 
                 <motion.button
@@ -550,10 +550,10 @@ export default function LoginPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      {isLogin ? "Logging in..." : "Registering..."}
+                      {isLogin ? "दर्ता गर्नुहोस् ..." : "खाता खोल्नुहोस..."}
                     </div>
                   ) : (
-                    <>{isLogin ? "Login" : "Register"}</>
+                    <>{isLogin ? "दर्ता गर्नुहोस्" : "खाता खोल्नुहोस"}</>
                   )}
                 </motion.button>
               </motion.div>
@@ -591,7 +591,7 @@ export default function LoginPage() {
           >
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col items-center">
               <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-white text-lg">{isLogin ? "Logging in..." : "Creating account..."}</p>
+              <p className="text-white text-lg">{isLogin ? "दर्ता गर्नुहोस्..." : "खाता खोल्नुहोस..."}</p>
             </div>
           </motion.div>
         )}

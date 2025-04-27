@@ -80,7 +80,7 @@ export default function HomePage() {
                 className="bg-black/30 backdrop-blur-md border border-white/20 text-white hover:bg-white/10 hover:text-white rounded-full"
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                लगआउट
               </Button>
             </div>
           </div>
@@ -95,10 +95,10 @@ export default function HomePage() {
           {/* Game Cards */}
           <div className="space-y-6">
             <GameCard
-              title="Aviator"
+              title="एभिएटर"
               imageSrc="/crash.png"
               href="/crash-game"
-              description="Multiplayer crash game"
+              description="मल्टिप्लेयर क्र्यास गेम JetX"
               delay={0.1}
             />
 
@@ -106,15 +106,15 @@ export default function HomePage() {
               title="JetX"
               imageSrc="/jetxmain.webp"
               href="/jetx-game"
-              description="Space adventure game"
+              description="स्पेस एडभेन्चर गेम"
               delay={0.2}
             />
 
             <GameCard
-              title="Space Man"
+              title=" Space म्यान"
               imageSrc="/spaceman.webp"
               href="/spaceman-game"
-              description="Cosmic exploration game"
+              description="Cosmic exploration गेम"
               delay={0.3}
             />
           </div>

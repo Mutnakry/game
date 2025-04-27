@@ -119,16 +119,16 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
         setTimeout(() => setCopied(false), 2000)
 
         toast({
-          title: "Copied to clipboard",
-          description: "Account information copied successfully",
+          title: "क्लिपबोर्डमा प्रतिलिपि गरियो",
+          description: "खाता जानकारी सफलतापूर्वक प्रतिलिपि गरियो",
           variant: "success",
         })
       })
       .catch((err) => {
         console.error("Failed to copy: ", err)
         toast({
-          title: "Copy failed",
-          description: "Failed to copy text to clipboard",
+          title: "प्रतिलिपि असफल भयो",
+          description: "पाठ क्लिपबोर्डमा प्रतिलिपि गर्न असफल भयो",
           variant: "destructive",
         })
       })
@@ -223,7 +223,7 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
           <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-yellow-200 to-yellow-400 rounded-full opacity-20"></div>
 
           <motion.div variants={itemVariants} className="relative z-10">
-            <h3 className="text-xl font-semibold mb-3 font-KhmerMoul text-gray-800">Account Inactive</h3>
+            <h3 className="text-xl font-semibold mb-3 font-KhmerMoul text-gray-800">खाता निष्क्रिय</h3>
             <div className="w-16 h-1 bg-gradient-to-r from-green-400 to-yellow-400 mx-auto mb-4 rounded-full"></div>
             <p className="mb-5 text-gray-600">
               {userData?.message || userMessage || "Please contact support to activate your account."}
@@ -231,7 +231,8 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
 
 
             <div>
-              <span className="text-gray-800">Customer service : {whatsappNumber}</span>
+              <span className="text-gray-800">ग्राहक सेवा
+              : {whatsappNumber}</span>
             </div>
           </motion.div>
 
@@ -242,13 +243,13 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
             <div className="flex text-sm justify-between items-center">
               <div className="space-y-2">
                 <p className="flex items-center">
-                  <span className="font-medium text-gray-700 w-20">Username:</span>
+                  <span className="font-medium text-gray-700 whitespace-nowrap w-20">प्रयोगकर्ता नाम : </span>
                   <span className="text-gray-800">{userData?.username || username }</span>
                   <br />
 
                 </p>
                 <p className="flex items-center">
-                  <span className="font-medium text-gray-700 w-20">What App:</span>
+                  <span className="font-medium text-gray-700 w-20">WhatApp:</span>
                   <span className="text-gray-800">{userData?.phone || userPhone}</span>
                 </p>
               </div>
@@ -330,7 +331,8 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
                 animate="pulse"
               >
                 <FaWhatsapp className="text-xl" />
-                Contact via WhatsApp
+                WhatsApp मार्फत सम्पर्क गर्नुहोस्
+
               </motion.button>
 
             )}
@@ -344,7 +346,7 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
                 setAccAtive(false)
               }}
             >
-              Back to Login
+             लगइनमा फर्कनुहोस्
             </motion.button>
           </motion.div>
         </motion.div>
