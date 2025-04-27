@@ -418,7 +418,7 @@ export default function LoginPage() {
               className={`flex-1 py-4 text-center font-medium transition-colors ${isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
                 }`}
             >
-             गलगइन गर्नुहोस
+          लगइन
             </button>
             <button
               onClick={() => setIsLogin(false)}
@@ -550,10 +550,10 @@ export default function LoginPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      {isLogin ? "गलगइन गर्नुहोस..." : "खाता खोल्नुहोस..."}
+                      {isLogin ? "लगइन गर्नुहोस..." : "खाता खोल्नुहोस..."}
                     </div>
                   ) : (
-                    <>{isLogin ? "गलगइन गर्नुहोस" : "खाता खोल्नुहोस"}</>
+                    <>{isLogin ? "लगइन गर्नुहोस" : "खाता खोल्नुहोस"}</>
                   )}
                 </motion.button>
               </motion.div>
