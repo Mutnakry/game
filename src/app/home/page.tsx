@@ -98,7 +98,7 @@ export default function HomePage() {
               title="Aviator"
               imageSrc="/crash.png"
               href="/crash-game"
-              description="Multiplayer crash game"
+              description="मल्टिप्लेयर क्र्यास गेम"
               delay={0.1}
             />
 
@@ -106,7 +106,7 @@ export default function HomePage() {
               title="JetX"
               imageSrc="/jetxmain.webp"
               href="/jetx-game"
-              description="Space adventure game"
+              description="स्पेस एडभेन्चर गेम"
               delay={0.2}
             />
 
@@ -114,7 +114,7 @@ export default function HomePage() {
               title="Space Man"
               imageSrc="/spaceman.webp"
               href="/spaceman-game"
-              description="Cosmic exploration game"
+              description="ब्रह्माण्ड अन्वेषण गेम"
               delay={0.3}
             />
           </div>
@@ -164,7 +164,7 @@ function GameCard({ title, imageSrc, href, description, multiplier, delay = 0 }:
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                <span className="text-xs text-green-500">Live</span>
+                <span className="text-xs text-green-500">प्रत्यक्ष</span>
               </div>
 
               {multiplier && (
