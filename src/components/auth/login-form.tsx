@@ -418,7 +418,7 @@ export default function LoginPage() {
               className={`flex-1 py-4 text-center font-medium transition-colors ${isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
                 }`}
             >
-              दर्ता गर्नुहोस्
+             गलगइन गर्नुहोस
             </button>
             <button
               onClick={() => setIsLogin(false)}
@@ -488,7 +488,7 @@ export default function LoginPage() {
                       className="w-full p-3 rounded-r-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">देश कोड बिना आफ्नो १०-अङ्कको WhatApps नम्बर राख्नुहो</p>
+                  <p className="text-xs text-gray-500">देश कोड बिना आफ्नो १०-अङ्कको WhatApps नम्बर राख्नुहोस</p>
                 </div>
 
                 <div className="space-y-2">
@@ -550,10 +550,10 @@ export default function LoginPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      {isLogin ? "दर्ता गर्नुहोस् ..." : "खाता खोल्नुहोस..."}
+                      {isLogin ? "गलगइन गर्नुहोस..." : "खाता खोल्नुहोस..."}
                     </div>
                   ) : (
-                    <>{isLogin ? "दर्ता गर्नुहोस्" : "खाता खोल्नुहोस"}</>
+                    <>{isLogin ? "गलगइन गर्नुहोस" : "खाता खोल्नुहोस"}</>
                   )}
                 </motion.button>
               </motion.div>
