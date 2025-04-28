@@ -18,13 +18,12 @@ interface UserData {
 
 interface WhatAppEntry {
   id: string
-  whatapp: string       // Phone number, e.g., "9700447095"
-  phoneLink?: string    // Optional pre-built WhatsApp URL
-  message?: string      // Optional custom message
+  whatapp: string // Phone number, e.g., "9700447095"
+  phoneLink?: string // Optional pre-built WhatsApp URL
+  message?: string // Optional custom message
   createdAt: string
   updatedAt: string
 }
-
 
 interface AccountInactiveProps {
   setAccAtive: React.Dispatch<React.SetStateAction<boolean>>
@@ -96,7 +95,6 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
     fetchWhatsAppConfig()
   }, [toast, retryCount])
 
-
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as HTMLElement
     if (target.id === "popup-overlay") {
@@ -119,16 +117,16 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
         setTimeout(() => setCopied(false), 2000)
 
         toast({
-          title: "क्लिपबोर्डमा प्रतिलिपि गरियो",
-          description: "खाता जानकारी सफलतापूर्वक प्रतिलिपि गरियो",
+          title: "Copied to clipboard",
+          description: "Account information successfully copied",
           variant: "success",
         })
       })
       .catch((err) => {
         console.error("Failed to copy: ", err)
         toast({
-          title: "प्रतिलिपि असफल भयो",
-          description: "पाठ क्लिपबोर्डमा प्रतिलिपि गर्न असफल भयो",
+          title: "Copy failed",
+          description: "Failed to copy text to clipboard",
           variant: "destructive",
         })
       })
@@ -223,16 +221,14 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
           <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-yellow-200 to-yellow-400 rounded-full opacity-20"></div>
 
           <motion.div variants={itemVariants} className="relative z-10">
-            <h3 className="text-xl font-semibold mb-3 font-KhmerMoul text-gray-800">खाता निष्क्रिय</h3>
+            <h3 className="text-xl font-semibold mb-3 font-KhmerMoul text-gray-800">Account Inactive</h3>
             <div className="w-16 h-1 bg-gradient-to-r from-green-400 to-yellow-400 mx-auto mb-4 rounded-full"></div>
             <p className="mb-5 text-gray-600">
               {userData?.message || userMessage || "Please contact support to activate your account."}
             </p>
 
-
             <div>
-              <span className="text-gray-800">ग्राहक सेवा
-              : {whatsappNumber}</span>
+              <span className="text-gray-800">Customer Service: {whatsappNumber}</span>
             </div>
           </motion.div>
 
@@ -243,13 +239,12 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
             <div className="flex text-sm justify-between items-center">
               <div className="space-y-2">
                 <p className="flex items-center">
-                  <span className="font-medium text-gray-700 whitespace-nowrap w-20">प्रयोगकर्ता नाम : </span>
-                  <span className="text-gray-800">{userData?.username || username }</span>
+                  <span className="font-medium text-gray-700 whitespace-nowrap w-20">Username: </span>
+                  <span className="text-gray-800">{userData?.username || username}</span>
                   <br />
-
                 </p>
                 <p className="flex items-center">
-                  <span className="font-medium text-gray-700 w-20">WhatApp:</span>
+                  <span className="font-medium text-gray-700 w-20">WhatsApp:</span>
                   <span className="text-gray-800">{userData?.phone || userPhone}</span>
                 </p>
               </div>
@@ -331,10 +326,8 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
                 animate="pulse"
               >
                 <FaWhatsapp className="text-xl" />
-                WhatsApp मार्फत सम्पर्क गर्नुहोस्
-
+                Contact via WhatsApp
               </motion.button>
-
             )}
 
             <motion.button
@@ -346,7 +339,7 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
                 setAccAtive(false)
               }}
             >
-             लगइनमा फर्कनुहोस्
+              Return to Login
             </motion.button>
           </motion.div>
         </motion.div>

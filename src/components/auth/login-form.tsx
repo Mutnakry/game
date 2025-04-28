@@ -118,8 +118,8 @@ export default function LoginPage() {
     if (!phone || !password) {
       toast({
         variant: "destructive",
-        title: "लगइन त्रुटि",
-        description: "कृपया आफ्नो फोन नम्बर र पासवर्ड राख्नुहोस",
+        title: "Login Error",
+        description: "Please enter your phone number and password",
       })
       return
     }
@@ -128,7 +128,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Invalid Phone Number",
-        description: "कृपया मान्य ९ वा १०-अङ्कको फोन नम्बर राख्नुहोस्",
+        description: "Please enter a valid 9 or 10-digit phone number",
       })
       return
     }
@@ -157,7 +157,7 @@ export default function LoginPage() {
       console.log("User authenticated:", user.uid)
 
       // Get Firestore user data
-      const userQuery = query(collection(db, "users"), where("phone", "==", formattedPhone))
+      const userQuery = query(collection(db, "users-crazi"), where("phone", "==", formattedPhone))
       const userDoc = await getDocs(userQuery)
 
       console.log("User query results:", userDoc.size)
@@ -172,7 +172,7 @@ export default function LoginPage() {
           localStorage.setItem("userPhone", userData.phone || "")
 
           toast({
-            title: "लगइन सफल भयो",
+            title: "Login Successful",
             description: "Welcome back!",
             variant: "success",
           })
@@ -189,7 +189,6 @@ export default function LoginPage() {
             email: generatedEmail,
             username: userData.username || "",
             phone: userData.phone || "",
-           
           })
         }
       } else {
@@ -197,7 +196,7 @@ export default function LoginPage() {
         console.error("User exists in Auth but not in Firestore")
 
         // Create user document in Firestore
-        await setDoc(doc(db, "users", user.uid), {
+        await setDoc(doc(db, "users-crazi", user.uid), {
           username: phone, // Default username to phone
           phone: formattedPhone,
           email: generatedEmail,
@@ -216,13 +215,13 @@ export default function LoginPage() {
           email: generatedEmail,
           username: phone,
           phone: formattedPhone,
-          message: "तपाईंको खाता सक्रिय गर्न आवश्यक छ। कृपया हाम्रो ग्राहक सेवासँग WhatsApp मार्फत सम्पर्क गर्नुहोस्",
+          message: "Your account needs to be activated. Please contact our customer service via WhatsApp",
         })
       }
     } catch (error: any) {
-      console.error("लगइन असफल भयो", error)
+      console.error("Login failed", error)
 
-      let errorMessage = "कृपया आफ्नो फोन नम्बर र पासवर्ड जाँच गर्नुहोस्."
+      let errorMessage = "Please check your phone number and password."
 
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         errorMessage = "Invalid phone number or password"
@@ -263,7 +262,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: "जडान गर्न सकिएन। यो फोन नम्बर हाम्रो प्रणालीमा पहिले नै दर्ता गरिएको छ",
+        description: "Connection failed. This phone number is already registered in our system",
       })
       return
     }
@@ -271,8 +270,8 @@ export default function LoginPage() {
     if (!password || !username || !phone) {
       toast({
         variant: "destructive",
-        title: "प्रमाणीकरण त्रुटि",
-        description: "कृपया सबै क्षेत्रहरू भर्नुहोस्",
+        title: "Authentication Error",
+        description: "Please fill in all fields",
       })
       return
     }
@@ -280,8 +279,8 @@ export default function LoginPage() {
     if (!validatePhone(phone)) {
       toast({
         variant: "destructive",
-        title: "अमान्य फोन नम्बर",
-        description: "कृपया मान्य ९ वा १०-अङ्कको फोन नम्बर राख्नुहोस्",
+        title: "Invalid Phone Number",
+        description: "Please enter a valid 9 or 10-digit phone number",
       })
       return
     }
@@ -290,7 +289,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Password Error",
-        description: "पासवर्ड धेरै कमजोर छ। कृपया कम्तिमा ६ वर्ण प्रयोग गर्नुहोस्",
+        description: "Password is too weak. Please use at least 6 characters",
       })
       return
     }
@@ -304,7 +303,7 @@ export default function LoginPage() {
       console.log("Attempting registration with:", { username, phone: formattedPhone })
 
       // Check if phone number already exists
-      const existingUserQuery = query(collection(db, "users"), where("phone", "==", formattedPhone))
+      const existingUserQuery = query(collection(db, "users-crazi"), where("phone", "==", formattedPhone))
       const existingUserSnapshot = await getDocs(existingUserQuery)
 
       if (!existingUserSnapshot.empty) {
@@ -316,7 +315,7 @@ export default function LoginPage() {
           email: userData.email || generateEmailFromPhone(formattedPhone),
           username: userData.username || "",
           phone: formattedPhone,
-          message: "उपभोक्तासँग जडान गर्न सकिएन। यो फोन नम्बर हाम्रो प्रणालीमा पहिले नै दर्ता गरिएको छ",
+          message: "Connection to user failed. This phone number is already registered in our system",
         })
         setLoading(false)
         return
@@ -331,7 +330,7 @@ export default function LoginPage() {
       localStorage.setItem("username", username)
       localStorage.setItem("userPhone", formattedPhone)
       // Store user data in Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
+      await setDoc(doc(db, "users-crazi", userCredential.user.uid), {
         username,
         phone: formattedPhone,
         email: generatedEmail,
@@ -346,25 +345,25 @@ export default function LoginPage() {
 
       setAccAtive(true)
     } catch (error: any) {
-      console.error("दर्ता त्रुटि:", error)
+      console.error("Registration error:", error)
 
-      let errorMessage = "दर्ता त्रुटि"
+      let errorMessage = "Registration Error"
 
       if (error.code === "auth/email-already-in-use") {
-        errorMessage = "यो फोन नम्बर पहिले नै दर्ता गरिएको छ"
+        errorMessage = "This phone number is already registered"
       } else if (error.code === "auth/weak-password") {
-        errorMessage = "पासवर्ड धेरै कमजोर छ। कृपया कम्तिमा ६ वर्ण प्रयोग गर्नुहोस्"
+        errorMessage = "Password is too weak. Please use at least 6 characters"
       } else if (error.code === "auth/network-request-failed") {
-        errorMessage = " नेटवर्क त्रुटि। कृपया आफ्नो इन्टरनेट जडान जाँच गर्नुहोस्"
+        errorMessage = "Network error. Please check your internet connection"
       } else if (error.code) {
-        errorMessage = `दर्ता त्रुटि: ${error.code}`
+        errorMessage = `Registration error: ${error.code}`
       } else if (error.message) {
         errorMessage = error.message
       }
 
       toast({
         variant: "destructive",
-        title: "दर्ता असफल भयो",
+        title: "Registration Failed",
         description: errorMessage,
       })
     } finally {
@@ -372,19 +371,19 @@ export default function LoginPage() {
     }
   }
 
-  const cleardata =()=>{
+  const cleardata = () => {
     setPhone("")
     setUsername("")
     setPassword("")
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
       {/* Background elements */}
       <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('/bg-pattern.png')] opacity-10"></div>
-        <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
-        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-slate-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
+        <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-slate-400 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
       </div>
 
       <motion.div
@@ -394,7 +393,7 @@ export default function LoginPage() {
         variants={containerVariants}
       >
         <motion.div variants={itemVariants} className="mb-8">
-          <img  src="/LOGO CRASH-02.png" alt="Logo" />
+          <img src="/Crazicrashhack.png" className="h-44" alt="Logo" />
         </motion.div>
 
         {firebaseError && (
@@ -409,23 +408,25 @@ export default function LoginPage() {
 
         <motion.div
           variants={itemVariants}
-          className="w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-800 overflow-hidden"
+          className="w-full max-w-sm bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden"
         >
           {/* Tab navigation */}
           <div className="flex" onClick={cleardata}>
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-4 text-center font-medium transition-colors ${isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
-                }`}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${
+                isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
+              }`}
             >
-          लगइन
+              Login
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-4 text-center font-medium transition-colors ${!isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
-                }`}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${
+                !isLogin ? "bg-yellow-500 text-black" : "bg-transparent text-gray-400 hover:text-white"
+              }`}
             >
-              खाता खोल्नुहोस
+              Create Account
             </button>
           </div>
 
@@ -440,12 +441,12 @@ export default function LoginPage() {
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-                <h2 className="text-xl font-bold text-center mb-6">{isLogin ? "स्वागत छ" : "प्रयोगकर्ता नाम"}</h2>
+                <h2 className="text-xl font-bold text-center mb-6">{isLogin ? "Welcome" : "Username"}</h2>
 
                 {!isLogin && (
                   <div className="space-y-2">
                     <label htmlFor="username" className="text-sm font-medium text-gray-300">
-                    आफ्नो प्रयोगकर्ता नाम लेख्नुहोस
+                      Enter your username
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -454,11 +455,11 @@ export default function LoginPage() {
                       <input
                         id="username"
                         type="text"
-                        placeholder="आफ्नो प्रयोगकर्ता नाम लेख्नुहोस"
+                        placeholder="Enter your username"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full p-3 pl-10 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                        className="w-full p-3 pl-10 rounded-lg bg-slate-800/50 text-white placeholder-gray-500 border border-slate-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
                       />
                     </div>
                   </div>
@@ -466,10 +467,10 @@ export default function LoginPage() {
 
                 <div className="space-y-2">
                   <label htmlFor="phone" className="text-sm font-medium text-gray-300">
-                  WhatApps नम्बर
+                    WhatsApp Number
                   </label>
                   <div className="relative flex">
-                    <div className="flex items-center justify-center px-3 bg-gray-700 border border-gray-600 rounded-l-lg">
+                    <div className="flex items-center justify-center px-3 bg-slate-700 border border-slate-600 rounded-l-lg">
                       <FaWhatsapp className="text-green-500 mr-1" />
                       <span className="text-white">+977</span>
                     </div>
@@ -485,15 +486,15 @@ export default function LoginPage() {
                         setPhone(value)
                       }}
                       maxLength={10}
-                      className="w-full p-3 rounded-r-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                      className="w-full p-3 rounded-r-lg bg-slate-800/50 text-white placeholder-gray-500 border border-slate-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">देश कोड बिना आफ्नो १०-अङ्कको WhatApps नम्बर राख्नुहोस</p>
+                  <p className="text-xs text-gray-500">Enter your 10-digit WhatsApp number without country code</p>
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium text-gray-300">
-                  पासवर्ड राख्नुहोस
+                    Enter Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -502,11 +503,11 @@ export default function LoginPage() {
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder=" पासवर्ड राख्नुहोस"
+                      placeholder="Enter password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full p-3 pl-10 pr-10 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                      className="w-full p-3 pl-10 pr-10 rounded-lg bg-slate-800/50 text-white placeholder-gray-500 border border-slate-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
                     />
                     <button
                       type="button"
@@ -517,7 +518,7 @@ export default function LoginPage() {
                       {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                     </button>
                   </div>
-                  {!isLogin && <p className="text-xs text-gray-500">पासवर्ड कम्तिमा ६ वर्ण लामो हुनुपर्छ</p>}
+                  {!isLogin && <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>}
                 </div>
 
                 <motion.button
@@ -525,8 +526,9 @@ export default function LoginPage() {
                   whileTap={{ scale: 0.97 }}
                   onClick={isLogin ? handleLogin : handleRegister}
                   disabled={loading || !firebaseInitialized}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition-all ${loading || !firebaseInitialized ? "opacity-70 cursor-not-allowed" : ""
-                    }`}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 shadow-lg transition-all ${
+                    loading || !firebaseInitialized ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
                 >
                   {loading ? (
                     <div className="flex items-center justify-center">
@@ -550,32 +552,14 @@ export default function LoginPage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      {isLogin ? "लगइन गर्नुहोस..." : "खाता खोल्नुहोस..."}
+                      {isLogin ? "Logging in..." : "Creating account..."}
                     </div>
                   ) : (
-                    <>{isLogin ? "लगइन गर्नुहोस" : "खाता खोल्नुहोस"}</>
+                    <>{isLogin ? "Login" : "Create Account"}</>
                   )}
                 </motion.button>
               </motion.div>
             </AnimatePresence>
-          </div>
-        </motion.div>
-
-        {/* Game images */}
-        <motion.div variants={itemVariants} className="mt-10 grid grid-cols-2 gap-4 w-full max-w-sm">
-          <div className="overflow-hidden rounded-xl shadow-lg">
-            <img
-              src="https://t4.ftcdn.net/jpg/04/42/21/53/360_F_442215355_AjiR6ogucq3vPzjFAAEfwbPXYGqYVAap.jpg"
-              alt="JetX"
-              className="w-full h-auto object-cover transform hover:scale-110 transition-transform duration-500"
-            />
-          </div>
-          <div className="overflow-hidden rounded-xl shadow-lg">
-            <img
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXn8BNx6JAauM_mcWo9Ykmg9YRdglXdnXK-g&s"
-              alt="Game"
-              className="w-full h-auto object-cover transform hover:scale-110 transition-transform duration-500"
-            />
           </div>
         </motion.div>
       </motion.div>
@@ -587,11 +571,11 @@ export default function LoginPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm z-50"
+            className="fixed inset-0 flex items-center justify-center bg-slate-900 bg-opacity-70 backdrop-blur-sm z-50"
           >
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col items-center">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 flex flex-col items-center">
               <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-white text-lg">{isLogin ? "दर्ता गर्नुहोस्..." : "खाता खोल्नुहोस..."}</p>
+              <p className="text-white text-lg">{isLogin ? "Logging in..." : "Creating account..."}</p>
             </div>
           </motion.div>
         )}

@@ -137,24 +137,7 @@ export function SpacemanDisplay({
           {/* Canvas for cosmic particles */}
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0" />
 
-          {/* Spaceman above the circle */}
-          <div className="absolute inset-0 flex justify-center z-20">
-            <motion.div
-              className="relative"
-              style={{ top: "20%" }}
-              animate={{
-                y: isAnimating ? [0, -5, 0] : 0,
-                rotate: isAnimating ? [0, -5, 5, 0] : 0,
-              }}
-              transition={{
-                duration: 4,
-                repeat: isAnimating ? Number.POSITIVE_INFINITY : 0,
-                repeatType: "reverse",
-              }}
-            >
-            
-            </motion.div>
-          </div>
+          
 
           {/* Glowing Circle */}
           <div className="absolute inset-0 flex items-center justify-center z-10">

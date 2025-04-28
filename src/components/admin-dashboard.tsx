@@ -60,8 +60,8 @@ export default function AdminDashboard() {
   const [winnersLoading, setWinnersLoading] = useState(true)
   const [winnersError, setWinnersError] = useState<string | null>(null)
 
-  const crashesRef = collection(db, "crashHistory")
-  const usersRef = collection(db, "users")
+  const crashesRef = collection(db, "crashHistory-crazi")
+  const usersRef = collection(db, "users-crazi")
 
   // Fetch total crash history count
   useEffect(() => {

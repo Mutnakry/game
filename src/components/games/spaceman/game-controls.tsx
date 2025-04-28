@@ -41,7 +41,7 @@ export function GameControls({
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
             />
-           बचत...
+           Saving...
           </span>
         ) : (
           <>
@@ -52,7 +52,7 @@ export function GameControls({
               }}
               transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatType: "loop" }}
             />
-            BLAST OFF
+            Start
           </>
         )}
       </Button>

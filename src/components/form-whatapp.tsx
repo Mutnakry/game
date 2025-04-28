@@ -43,7 +43,7 @@ interface SingleWhatAppState {
 const SINGLE_WHAT_APP_ID = "single-what-app"
 
 // Pre-defined values from the user
-const DEFAULT_WHATAPP_NUMBER = "977 9700447095"
+const DEFAULT_WHATAPP_NUMBER = "977 1209090909"
 const DEFAULT_WHATAPP_LINK = "https://bit.ly/3YHcfpl"
 
 export default function SingleWhatAppForm() {
@@ -69,7 +69,7 @@ export default function SingleWhatAppForm() {
       setError(null)
 
       try {
-        const docRef = doc(db, "what-app1", SINGLE_WHAT_APP_ID)
+        const docRef = doc(db, "what-app-crazi", SINGLE_WHAT_APP_ID)
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists()) {
@@ -137,7 +137,7 @@ export default function SingleWhatAppForm() {
       }
 
       // Save to Firebase
-      await setDoc(doc(db, "what-app1", SINGLE_WHAT_APP_ID), {
+      await setDoc(doc(db, "what-app-crazi", SINGLE_WHAT_APP_ID), {
         whatapp: updatedEntry.whatapp,
         phoneLink: updatedEntry.phoneLink,
         message: updatedEntry.message,

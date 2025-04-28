@@ -10,7 +10,7 @@ import { CuteNavbar } from "@/components/Navbar"
 import ShowUserLogin from "@/components/ShowUserLogin"
 import RandDomMultiplire from "@/components/rand-dom-multiplire"
 import AdminDashBoard from "@/components/admin-dashboard"
-import { GameHistory } from "@/components/game-history"
+import  GameHistory  from "@/components/game-history"
 import { AddNewPresets } from "@/components/and-new-resets"
 import FormWhatApp from "@/components/form-whatapp"
 

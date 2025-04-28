@@ -54,7 +54,7 @@ export default function SpaceMan() {
           className="bg-black/30 backdrop-blur-md border border-white/20 text-white hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-4 w-4 mr-2" />
-          पछाडि
+          Back
         </Button>
       </div>
 
@@ -105,7 +105,7 @@ export default function SpaceMan() {
 
       {/* Footer */}
       <div className="relative z-10 w-full text-center text-gray-500 text-xs mt-8 mb-4">
-      © २०२५ Space म्यान गेम। सबै अधिकार सुरक्षित।
+      <p>© 2025 Mini Crash Game. All rights reserved.</p>
       </div>
     </div>
   )

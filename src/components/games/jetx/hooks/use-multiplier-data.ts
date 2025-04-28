@@ -30,7 +30,6 @@ export function useMultiplierData() {
         if (!response.ok) {
           throw new Error(`Failed to fetch multipliers: ${response.status} ${response.statusText}`)
         }
-
         const data = await response.json()
         console.log("Multipliers data:", data)
 

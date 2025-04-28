@@ -30,7 +30,7 @@ export function useCrashData() {
 
       console.log("💾 Saving SpaceMan data:", crashData)
 
-      await addDoc(collection(db, "crashHistory"), crashData)
+      await addDoc(collection(db, "crashHistory-crazi"), crashData)
       console.log("✅ SpaceMan data saved to Firebase")
 
       // Update local crash history

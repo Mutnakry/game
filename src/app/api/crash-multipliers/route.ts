@@ -19,7 +19,7 @@ const db = getFirestore(app)
 export async function GET() {
   try {
     // Get multiplier ranges from Firebase
-    const multiplierQuery = query(collection(db, "crashMultipliers"), orderBy("min", "asc"))
+    const multiplierQuery = query(collection(db, "crashMultipliers-crazi"), orderBy("min", "asc"))
     const querySnapshot = await getDocs(multiplierQuery)
     // If no multipliers found, return default algorithm
     if (querySnapshot.empty) {

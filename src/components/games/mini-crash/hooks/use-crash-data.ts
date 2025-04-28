@@ -18,6 +18,7 @@ export function useCrashData() {
       const crashData = {
         timestamp: new Date().toISOString(),
         crashPoint: crashPoint,
+        gameType: "mini-crash",
         // Since we don't have betting functionality yet, we'll set these to default values
         betAmount: 0,
         cashoutMultiplier: 0,
@@ -29,7 +30,7 @@ export function useCrashData() {
 
       console.log("💾 Saving crash data on crash:", crashData)
 
-      await addDoc(collection(db, "crashHistory"), crashData)
+      await addDoc(collection(db, "crashHistory-crazi"), crashData)
       console.log("✅ Crash data saved to Firebase")
 
       // Update local crash history

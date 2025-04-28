@@ -112,7 +112,7 @@ export default function MultiplierRangesAdmin() {
       const app = getApp()
       const db = getFirestore(app)
 
-      const multiplierQuery = query(collection(db, "crashMultipliers"), orderBy("min", sortOrder))
+      const multiplierQuery = query(collection(db, "crashMultipliers-crazi"), orderBy("min", sortOrder))
       const querySnapshot = await getDocs(multiplierQuery)
 
       const multiplierData: MultiplierRange[] = []
@@ -211,7 +211,7 @@ export default function MultiplierRangesAdmin() {
       const app = getApp()
       const db = getFirestore(app)
 
-      await addDoc(collection(db, "crashMultipliers"), {
+      await addDoc(collection(db, "crashMultipliers-crazi"), {
         min: newMultiplier.min,
         max: newMultiplier.max,
         probability: newMultiplier.probability,
@@ -269,7 +269,7 @@ export default function MultiplierRangesAdmin() {
       const app = getApp()
       const db = getFirestore(app)
 
-      const multiplierRef = doc(db, "crashMultipliers", editingMultiplier.id)
+      const multiplierRef = doc(db, "crashMultipliers-crazi", editingMultiplier.id)
 
       await updateDoc(multiplierRef, {
         min: editingMultiplier.min,
@@ -306,7 +306,7 @@ export default function MultiplierRangesAdmin() {
       const app = getApp()
       const db = getFirestore(app)
 
-      await deleteDoc(doc(db, "crashMultipliers", multiplierToDelete))
+      await deleteDoc(doc(db, "crashMultipliers-crazi", multiplierToDelete))
 
       // Close dialog and refresh
       setDeleteConfirmOpen(false)
@@ -332,7 +332,7 @@ export default function MultiplierRangesAdmin() {
 
       // Delete all existing multipliers
       for (const multiplier of multipliers) {
-        batch.delete(doc(db, "crashMultipliers", multiplier.id))
+        batch.delete(doc(db, "crashMultipliers-crazi", multiplier.id))
       }
 
       // Commit the batch delete
@@ -340,7 +340,7 @@ export default function MultiplierRangesAdmin() {
 
       // Add default multipliers
       for (const multiplier of DEFAULT_MULTIPLIERS) {
-        await addDoc(collection(db, "crashMultipliers"), {
+        await addDoc(collection(db, "crashMultipliers-crazi"), {
           min: multiplier.min,
           max: multiplier.max,
           probability: multiplier.probability,

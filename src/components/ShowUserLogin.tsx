@@ -99,7 +99,7 @@ function ShowUserLogin() {
     setError(null)
     try {
       // Create a query with ordering
-      const usersQuery = query(collection(db, "users"), orderBy(sortBy, sortDirection), limit(100))
+      const usersQuery = query(collection(db, "users-crazi"), orderBy(sortBy, sortDirection), limit(100))
 
       const querySnapshot = await getDocs(usersQuery)
       const userData: UserType[] = []
@@ -188,7 +188,7 @@ function ShowUserLogin() {
 
     setIsProcessing(true)
     try {
-      const userRef = doc(db, "users", selectedUser.id)
+      const userRef = doc(db, "users-crazi", selectedUser.id)
 
       await updateDoc(userRef, {
         username: editedUser.username,
@@ -232,7 +232,7 @@ function ShowUserLogin() {
     setIsProcessing(true)
     try {
       const newStatus = selectedUser.status === "active" ? "inactive" : "active"
-      const userRef = doc(db, "users", selectedUser.id)
+      const userRef = doc(db, "users-crazi", selectedUser.id)
 
       await updateDoc(userRef, {
         status: newStatus,
@@ -271,7 +271,7 @@ function ShowUserLogin() {
 
     setIsProcessing(true)
     try {
-      const userRef = doc(db, "users", selectedUser.id)
+      const userRef = doc(db, "users-crazi", selectedUser.id)
       await deleteDoc(userRef)
 
       // Update local state
