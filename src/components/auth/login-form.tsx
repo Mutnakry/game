@@ -1,9 +1,11 @@
+
+
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { FaUser, FaRegEyeSlash, FaRegEye, FaWhatsapp } from "react-icons/fa"
+import { FaUser, FaRegEyeSlash, FaRegEye } from "react-icons/fa"
 import { PiLockKey } from "react-icons/pi"
 
 // Firebase imports
@@ -39,6 +41,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState<string>("")
   const [username, setUsername] = useState<string>("")
   const [showPassword, setShowPassword] = useState<boolean>(false)
+  const [countryCode, setCountryCode] = useState<string>("+91") // Default to Nepal
 
   // UI state
   const [isLogin, setIsLogin] = useState<boolean>(true)
@@ -137,7 +140,7 @@ export default function LoginPage() {
 
     try {
       // Format phone with country code
-      const formattedPhone = `+977${phone}`
+      const formattedPhone = `${countryCode}${phone}`
 
       // Generate email from phone for Firebase auth
       const generatedEmail = generateEmailFromPhone(formattedPhone)
@@ -298,7 +301,7 @@ export default function LoginPage() {
 
     try {
       // Format the phone number with country code
-      const formattedPhone = `+977${phone}`
+      const formattedPhone = `${countryCode}${phone}`
 
       console.log("Attempting registration with:", { username, phone: formattedPhone })
 
@@ -470,10 +473,15 @@ export default function LoginPage() {
                     WhatsApp Number
                   </label>
                   <div className="relative flex">
-                    <div className="flex items-center justify-center px-3 bg-slate-700 border border-slate-600 rounded-l-lg">
-                      <FaWhatsapp className="text-green-500 mr-1" />
-                      <span className="text-white">+977</span>
-                    </div>
+                    <select
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      className="flex items-center justify-center px-3 bg-slate-700 border border-slate-600 rounded-l-lg text-white appearance-none cursor-pointer"
+                    >
+                      <option value="+91">🇮🇳 +91</option>
+                      <option value="+92">🇵🇰 +92</option>
+                      <option value="+88">🇧🇩 +88</option>
+                    </select>
                     <input
                       id="phone"
                       type="tel"
@@ -489,7 +497,7 @@ export default function LoginPage() {
                       className="w-full p-3 rounded-r-lg bg-slate-800/50 text-white placeholder-gray-500 border border-slate-700 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">Enter your 10-digit WhatsApp number without country code</p>
+                  <p className="text-xs text-gray-500">Enter your WhatsApp number without country code</p>
                 </div>
 
                 <div className="space-y-2">

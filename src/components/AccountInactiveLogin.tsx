@@ -64,7 +64,7 @@ const AccountInactiveLogin: React.FC<AccountInactiveProps> = ({ setAccAtive, use
       setLoadingState("loading")
 
       try {
-        const docRef = doc(db, "what-app1", WHAT_APP_CONFIG_ID)
+        const docRef = doc(db, "what-app-crazi", WHAT_APP_CONFIG_ID)
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists()) {
